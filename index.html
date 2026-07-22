@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cazatec - Gestión de Cotos y Caza</title>
+    <meta name="description" content="Aplicación para el control y gestión de cotos, caza y cazador">
+    <meta name="theme-color" content="#43a047">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Cazatec">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <header id="app-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <i class="fas fa-crosshairs header-icon"></i>
+                    <h1>Cazatec</h1>
+                </div>
+                <div class="header-right">
+                    <button id="btn-notifications" class="header-btn" title="Notificaciones">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge" id="notif-badge" style="display:none">0</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main id="main-content">
+            <!-- SECCIÓN: Inicio / Dashboard -->
+            <section id="page-dashboard" class="page active">
+                <div class="page-header">
+                    <h2><i class="fas fa-home"></i> Inicio</h2>
+                </div>
+                <div class="dashboard-grid">
+                    <div class="stat-card" onclick="navigateTo('page-cazador')">
+                        <div class="stat-icon"><i class="fas fa-user"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-number" id="stat-cazador">0</span>
+                            <span class="stat-label">Cazador</span>
+                        </div>
+                    </div>
+                    <div class="stat-card" onclick="navigateTo('page-cotos')">
+                        <div class="stat-icon"><i class="fas fa-mountain"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-number" id="stat-cotos">0</span>
+                            <span class="stat-label">Cotos</span>
+                        </div>
+                    </div>
+                    <div class="stat-card" onclick="navigateTo('page-armas')">
+                        <div class="stat-icon"><i class="fas fa-gun"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-number" id="stat-armas">0</span>
+                            <span class="stat-label">Armas</span>
+                        </div>
+                    </div>
+                    <div class="stat-card" onclick="navigateTo('page-especies')">
+                        <div class="stat-icon"><i class="fas fa-paw"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-number" id="stat-especies">0</span>
+                            <span class="stat-label">Especies</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-card">
+                    <h3><i class="fas fa-calendar-alt"></i> Actividad Reciente</h3>
+                    <div id="activity-list" class="activity-list">
+                        <p class="empty-state">No hay actividad reciente</p>
+                    </div>
+                </div>
+
+                <div class="section-card">
+                    <h3><i class="fas fa-chart-line"></i> Resumen Temporada</h3>
+                    <div class="season-summary">
+                        <div class="season-item">
+                            <i class="fas fa-crosshairs"></i>
+                            <span id="season-jornadas">0</span>
+                            <label>Jornadas</label>
+                        </div>
+                        <div class="season-item">
+                            <i class="fas fa-trophy"></i>
+                            <span id="season-capturas">0</span>
+                            <label>Capturas</label>
+                        </div>
+                        <div class="season-item">
+                            <i class="fas fa-map-marked-alt"></i>
+                            <span id="season-zonas">0</span>
+                            <label>Zonas</label>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN: Cazador / Perfil -->
+            <section id="page-cazador" class="page">
+                <div class="page-header">
+                    <h2><i class="fas fa-user"></i> Mi Perfil</h2>
+                </div>
+                <div class="section-card">
+                    <div class="profile-photo-container">
+                        <div class="profile-photo" id="cazador-foto">
+                            <i class="fas fa-camera"></i>
+                        </div>
+                        <button class="btn-camera" onclick="takePhoto('cazador')">
+                            <i class="fas fa-camera-retro"></i> Foto
+                        </button>
+                    </div>
+                    <form id="form-cazador" class="form-grid">
+                        <div class="form-group">
+                            <label>Nombre Completo</label>
+                            <input type="text" id="cazador-nombre" placeholder="Nombre y apellidos">
+                        </div>
+                        <div class="form-group">
+                            <label>DNI / NIE</label>
+                            <input type="text" id="cazador-dni" placeholder="12345678A">
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha de Nacimiento</label>
+                            <input type="date" id="cazador-nacimiento">
+                        </div>
+                        <div class="form-group">
+                            <label>Teléfono</label>
+                            <input type="tel" id="cazador-telefono" placeholder="600 000 000">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="cazador-email" placeholder="email@ejemplo.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Dirección</label>
+                            <input type="text" id="cazador-direccion" placeholder="Dirección completa">
+                        </div>
+                        <div class="form-group">
+                            <label>Número de Licencia</label>
+                            <input type="text" id="cazador-licencia" placeholder="Nº licencia de caza">
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha Expedición Licencia</label>
+                            <input type="date" id="cazador-fecha-licencia">
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha Caducidad Licencia</label>
+                            <input type="date" id="cazador-caducidad-licencia">
+                        </div>
+                        <div class="form-group">
+                            <label>Grupo Cinegético</label>
+                            <select id="cazador-grupo">
+                                <option value="">Seleccionar...</option>
+                                <option value="1">Grupo 1 - Montaña</option>
+                                <option value="2">Grupo 2 - Caza media</option>
+                                <option value="3">Grupo 3 - Caza mayor</option>
+                                <option value="todos">Todos los grupos</option>
+                            </select>
+                        </div>
+                    </form>
+                    <button class="btn-primary btn-full" onclick="guardarCazador()">
+                        <i class="fas fa-save"></i> Guardar Perfil
+                    </button>
+                </div>
+
+                <!-- Documentos del cazador -->
+                <div class="section-card">
+                    <h3><i class="fas fa-file-alt"></i> Documentos</h3>
+                    <div id="cazador-documentos" class="documents-grid">
+                        <!-- Se cargan dinámicamente -->
+                    </div>
+                    <button class="btn-secondary btn-full" onclick="addDocument('cazador')">
+                        <i class="fas fa-plus"></i> Añadir Documento
+                    </button>
+                </div>
+            </section>
+
+            <!-- SECCIÓN: Documentos -->
+            <section id="page-documentos" class="page">
+                <div class="page-header">
+                    <h2><i class="fas fa-folder-open"></i> Documentos</h2>
+                </div>
+                <div class="section-card">
+                    <div class="doc-categories">
+                        <button class="doc-cat-btn active" data-cat="licencias" onclick="filterDocs('licencias')">
+                            <i class="fas fa-id-card"></i> Licencias
+                        </button>
+                        <button class="doc-cat-btn" data-cat="permisos" onclick="filterDocs('permisos')">
+                            <i class="fas fa-stamp"></i> Permisos
+                        </button>
+                        <button class="doc-cat-btn" data-cat="seguros" onclick="filterDocs('seguros')">
+                            <i class="fas fa-shield-alt"></i> Seguros
+                        </button>
+                        <button class="doc-cat-btn" data-cat="certificados" onclick="filterDocs('certificados')">
+                            <i class="fas fa-certificate"></i> Certificados
+                        </button>
+                        <button class="doc-cat-btn" data-cat="otros" onclick="filterDocs('otros')">
+                            <i class="fas fa-ellipsis-h"></i> Otros
+                        </button>
+                    </div>
+                    <div id="documents-list" class="documents-list">
+                        <p class="empty-state">No hay documentos en esta categoría</p>
+                    </div>
+                    <button class="btn-primary btn-full" onclick="addDocument('general')">
+                        <i class="fas fa-camera"></i> Capturar / Subir Documento
+                    </button>
+                </div>
+            </section>
+
+            <!-- SECCIÓN: Armas -->
+            <section id="page-armas" class="page">
+                <div class="page-header">
+                    <h2><i class="fas fa-gun"></i> Mis Armas</h2>
+                </div>
+                <div id="armas-list" class="items-list">
+                    <p class="empty-state">No hay armas registradas</p>
+                </div>
+                <button class="btn-primary btn-full" onclick="showArmaForm()">
+                    <i class="fas fa-plus"></i> Añadir Arma
+                </button>
+
+                <div id="arma-form-container" class="section-card" style="display:none">
+                    <h3 id="arma-form-title"><i class="fas fa-plus"></i> Nueva Arma</h3>
+                    <form id="form-arma" class="form-grid">
+                        <input type="hidden" id="arma-id">
+                        <div class="form-group">
+                            <label>Marca</label>
+                            <input type="text" id="arma-marca" placeholder="Ej: Beretta">
+                        </div>
+                        <div class="form-group">
+                            <label>Modelo</label>
+                            <input type="text" id="arma-modelo" placeholder="Ej: A400 Xtreme">
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo de Arma</label>
+                            <select id="arma-tipo">
+                                <option value="">Seleccionar...</option>
+                                <option value="escopeta">Escopeta</option>
+                                <option value="riflé">Rifle</option>
+                                <option value="carabina">Carabina</option>
+                                <option value="pistola">Pistola</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Calibre</label>
+                            <input type="text" id="arma-calibre" placeholder="Ej: 12/70">
+                        </div>
+                        <div class="form-group">
+                            <label>Nº Serie</label>
+                            <input type="text" id="arma-serie" placeholder="Número de serie">
+                        </div>
+                        <div class="form-group">
+                            <label>Nº Registro de Armas</label>
+                            <input type="text" id="arma-registro" placeholder="Nº registro">
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha Compra</label>
+                            <input type="date" id="arma-fecha-compra">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Notas</label>
+                            <textarea id="arma-notas" placeholder="Observaciones..."></textarea>
+                        </div>
+                    </form>
+                    <div class="btn-group">
+                        <button class="btn-primary" onclick="guardarArma()">
+                            <i class="fas fa-save"></i> Guardar
+                        </button>
+                        <button class="btn-secondary" onclick="hideArmaForm()">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                    </div>
+                </div>
+
+                <div class="section-card">
+                    <h3><i class="fas fa-file-alt"></i> Documentación de Armas</h3>
+                    <div id="armas-documentos" class="documents-grid"></div>
+                    <button class="btn-secondary btn-full" onclick="addDocument('arma')">
+                        <i class="fas fa-camera"></i> Añadir Documento de Arma
+                    </button>
+                </div>
+            </section>
+
+            <!-- SECCIÓN: Cotos -->
+            <section id="page-cotos" class="page">
+                <div class="page-header">
+                    <h2><i class="fas fa-mountain"></i> Cotos de Caza</h2>
+                </div>
+                <div id="cotos-list" class="items-list">
+                    <p class="empty-state">No hay cotos registrados</p>
+                </div>
+                <button class="btn-primary btn-full" onclick="showCotoForm()">
+                    <i class="fas fa-plus"></i> Añadir Coto
+                </button>
+
+                <div id="coto-form-container" class="section-card" style="display:none">
+                    <h3 id="coto-form-title"><i class="fas fa-plus"></i> Nuevo Coto</h3>
+                    <form id="form-coto" class="form-grid">
+                        <input type="hidden" id="coto-id">
+                        <div class="form-group full-width">
+                            <label>Nombre del Coto</label>
+                            <input type="text" id="coto-nombre" placeholder="Nombre del coto">
+                        </div>
+                        <div class="form-group">
+                            <label>Ubicación / Dirección</label>
+                            <input type="text" id="coto-ubicacion" placeholder="Municipio, Provincia">
+                        </div>
+                        <div class="form-group">
+                            <label>Superficie (ha)</label>
+                            <input type="number" id="coto-superficie" placeholder="Hectáreas">
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo de Coto</label>
+                            <select id="coto-tipo">
+                                <option value="">Seleccionar...</option>
+                                <option value="monteria">Montería</option>
+                                <option value="rehala">Rehalas</option>
+                                <option value="batida">Batida</option>
+                                <option value="acecho">A céo / Acecho</option>
+                                <option value="beatas">A beatas</option>
+                                <option value="almirante">Almirante</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Especies Disponibles</label>
+                            <input type="text" id="coto-especies" placeholder="Ej: Jabalí, Ciervo">
+                        </div>
+                        <div class="form-group">
+                            <label>Contacto / Propietario</label>
+                            <input type="text" id="coto-contacto" placeholder="Nombre y teléfono">
+                        </div>
+                        <div class="form-group">
+                            <label>Nº Expediente</label>
+                            <input type="text" id="coto-expediente" placeholder="Nº expediente autorización">
+                        </div>
+                        <div class="form-group">
+                            <label>Temporada</label>
+                            <input type="text" id="coto-temporada" placeholder="Ej: 2025-2026">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Descripción / Notas</label>
+                            <textarea id="coto-descripcion" placeholder="Descripción del coto, accesos, etc."></textarea>
+                        </div>
+                    </form>
+                    <button class="btn-primary btn-full" onclick="showMapPicker()">
+                        <i class="fas fa-map-marked-alt"></i> Señalar en Mapa
+                    </button>
+                    <div id="map-picker" style="display:none; margin-top:10px">
+                        <div id="map-coto" class="map-container"></div>
+                        <p class="map-hint">Haz clic en el mapa para marcar la ubicación del coto</p>
+                    </div>
+                    <div class="btn-group" style="margin-top:10px">
+                        <button class="btn-primary" onclick="guardarCoto()">
+                            <i class="fas fa-save"></i> Guardar
+                        </button>
+                        <button class="btn-secondary" onclick="hideCotoForm()">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN: Mapa General -->
+            <section id="page-mapa" class="page">
+                <div class="page-header">
+                    <h2><i class="fas fa-map"></i> Mapa de Cotos</h2>
+                </div>
+                <div class="map-controls">
+                    <button class="btn-sm active" id="btn-ver-todos" onclick="verTodosCotos()">Todos</button>
+                    <button class="btn-sm" id="btn-ver-cotos" onclick="verCotosEnMapa()">Cotos</button>
+                    <button class="btn-sm" id="btn-ver-zonas" onclick="verZonasEnMapa()">Zonas</button>
+                </div>
+                <div id="map-general" class="map-container-large"></div>
+                <div id="map-legend" class="map-legend">
+                    <div class="legend-item"><span class="legend-dot" style="background:#2ecc71"></span> Coto</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#e74c3c"></span> Zona de caza</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#3498db"></span> Punto de interés</div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN: Zonas de Caza -->
+            <section id="page-zonas" class="page">
+                <div class="page-header">
+                    <h2><i class="fas fa-draw-polygon"></i> Zonas de Caza</h2>
+                </div>
+                <div id="zonas-list" class="items-list">
+                    <p class="empty-state">No hay zonas definidas</p>
+                </div>
+                <button class="btn-primary btn-full" onclick="showZonaForm()">
+                    <i class="fas fa-plus"></i> Crear Zona de Caza
+                </button>
+
+                <div id="zona-form-container" class="section-card" style="display:none">
+                    <h3><i class="fas fa-draw-polygon"></i> Nueva Zona</h3>
+                    <form id="form-zona" class="form-grid">
+                        <input type="hidden" id="zona-id">
+                        <div class="form-group full-width">
+                            <label>Nombre de la Zona</label>
+                            <input type="text" id="zona-nombre" placeholder="Nombre de la zona">
+                        </div>
+                        <div class="form-group">
+                            <label>Coto al que pertenece</label>
+                            <select id="zona-coto"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Especies</label>
+                            <input type="text" id="zona-especies" placeholder="Ej: Jabalí, Ciervo">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Descripción</label>
+                            <textarea id="zona-descripcion" placeholder="Descripción de la zona..."></textarea>
+                        </div>
+                    </form>
+                    <button class="btn-primary btn-full" onclick="showZoneDrawMap()">
+                        <i class="fas fa-draw-polygon"></i> Delinear Zona en Mapa
+                    </button>
+                    <div id="zone-draw-map" style="display:none; margin-top:10px">
+                        <div id="map-zona" class="map-container"></div>
+                        <p class="map-hint">Haz clic en el mapa para añadir puntos del polígono. Doble clic para cerrar.</p>
+                        <button class="btn-secondary btn-sm" onclick="clearZonePolygon()" style="margin-top:5px">
+                            <i class="fas fa-undo"></i> Limpiar
+                        </button>
+                    </div>
+                    <div class="btn-group" style="margin-top:10px">
+                        <button class="btn-primary" onclick="guardarZona()">
+                            <i class="fas fa-save"></i> Guardar
+                        </button>
+                        <button class="btn-secondary" onclick="hideZonaForm()">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN: Especies Cinegéticas -->
+            <section id="page-especies" class="page">
+                <div class="page-header">
+                    <h2><i class="fas fa-paw"></i> Especies Cinegéticas</h2>
+                </div>
+                <div class="species-filters">
+                    <button class="filter-btn active" onclick="filterSpecies('todos')">Todos</button>
+                    <button class="filter-btn" onclick="filterSpecies('mayor')">Caza Mayor</button>
+                    <button class="filter-btn" onclick="filterSpecies('menor')">Caza Menor</button>
+                    <button class="filter-btn" onclick="filterSpecies('cazadas')">Cazadas</button>
+                </div>
+                <div id="species-grid" class="species-grid">
+                    <!-- Se carga dinámicamente -->
+                </div>
+            </section>
+
+            <!-- SECCIÓN: Jornadas / Registro -->
+            <section id="page-jornadas" class="page">
+                <div class="page-header">
+                    <h2><i class="fas fa-book"></i> Registro de Jornadas</h2>
+                </div>
+                <div id="jornadas-list" class="items-list">
+                    <p class="empty-state">No hay jornadas registradas</p>
+                </div>
+                <button class="btn-primary btn-full" onclick="showJornadaForm()">
+                    <i class="fas fa-plus"></i> Nueva Jornada
+                </button>
+
+                <div id="jornada-form-container" class="section-card" style="display:none">
+                    <h3><i class="fas fa-plus"></i> Nueva Jornada de Caza</h3>
+                    <form id="form-jornada" class="form-grid">
+                        <input type="hidden" id="jornada-id">
+                        <div class="form-group">
+                            <label>Fecha</label>
+                            <input type="date" id="jornada-fecha">
+                        </div>
+                        <div class="form-group">
+                            <label>Coto</label>
+                            <select id="jornada-coto"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo de Jornada</label>
+                            <select id="jornada-tipo">
+                                <option value="monteria">Montería</option>
+                                <option value="batida">Batida</option>
+                                <option value="acecho">A ceo / Acecho</option>
+                                <option value="beatas">A beatas</option>
+                                <option value="almirante">Almirante</option>
+                                <option value="rehalas">Rehalas</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Zona</label>
+                            <select id="jornada-zona">
+                                <option value="">Sin zona específica</option>
+                            </select>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Especies Capturadas</label>
+                            <div id="jornada-species" class="jornada-species"></div>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Observaciones</label>
+                            <textarea id="jornada-observaciones" placeholder="Notas de la jornada..."></textarea>
+                        </div>
+                    </form>
+                    <div class="btn-group">
+                        <button class="btn-primary" onclick="guardarJornada()">
+                            <i class="fas fa-save"></i> Guardar
+                        </button>
+                        <button class="btn-secondary" onclick="hideJornadaForm()">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- NAVEGACIÓN INFERIOR -->
+        <nav id="bottom-nav">
+            <button class="nav-btn active" onclick="navigateTo('page-dashboard')" data-page="page-dashboard">
+                <i class="fas fa-home"></i>
+                <span>Inicio</span>
+            </button>
+            <button class="nav-btn" onclick="navigateTo('page-cazador')" data-page="page-cazador">
+                <i class="fas fa-user"></i>
+                <span>Cazador</span>
+            </button>
+            <button class="nav-btn" onclick="navigateTo('page-cotos')" data-page="page-cotos">
+                <i class="fas fa-mountain"></i>
+                <span>Cotos</span>
+            </button>
+            <button class="nav-btn" onclick="navigateTo('page-mapa')" data-page="page-mapa">
+                <i class="fas fa-map"></i>
+                <span>Mapa</span>
+            </button>
+            <button class="nav-btn" onclick="navigateTo('page-especies')" data-page="page-especies">
+                <i class="fas fa-paw"></i>
+                <span>Especies</span>
+            </button>
+            <button class="nav-btn" onclick="navigateTo('page-documentos')" data-page="page-documentos">
+                <i class="fas fa-folder"></i>
+                <span>Docs</span>
+            </button>
+            <button class="nav-btn" onclick="navigateTo('page-armas')" data-page="page-armas">
+                <i class="fas fa-gun"></i>
+                <span>Armas</span>
+            </button>
+            <button class="nav-btn" onclick="navigateTo('page-jornadas')" data-page="page-jornadas">
+                <i class="fas fa-book"></i>
+                <span>Jornadas</span>
+            </button>
+            <button class="nav-btn" onclick="navigateTo('page-zonas')" data-page="page-zonas">
+                <i class="fas fa-draw-polygon"></i>
+                <span>Zonas</span>
+            </button>
+        </nav>
+
+        <!-- Modal para foto/documento -->
+        <div id="photo-modal" class="modal" style="display:none">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-camera"></i> Capturar Documento</h3>
+                    <button class="modal-close" onclick="closePhotoModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <input type="file" id="file-input" accept="image/*" capture="environment" style="display:none">
+                    <input type="file" id="file-input-gallery" accept="image/*" style="display:none">
+                    <div id="photo-preview-container" style="display:none">
+                        <img id="photo-preview" src="" alt="Preview">
+                    </div>
+                    <div class="photo-actions">
+                        <button class="btn-primary" onclick="triggerCamera()">
+                            <i class="fas fa-camera"></i> Cámara
+                        </button>
+                        <button class="btn-secondary" onclick="triggerGallery()">
+                            <i class="fas fa-images"></i> Galería
+                        </button>
+                    </div>
+                    <div class="form-group" id="doc-name-group" style="margin-top:10px">
+                        <label>Nombre del documento</label>
+                        <input type="text" id="doc-name-input" placeholder="Ej: Licencia de caza">
+                    </div>
+                    <div class="form-group">
+                        <label>Categoría</label>
+                        <select id="doc-category-select">
+                            <option value="licencias">Licencia</option>
+                            <option value="permisos">Permiso</option>
+                            <option value="seguros">Seguro</option>
+                            <option value="certificados">Certificado</option>
+                            <option value="otros">Otro</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-primary" onclick="saveDocument()" id="btn-save-doc" disabled>
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                    <button class="btn-secondary" onclick="closePhotoModal()">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para detalle de documento -->
+        <div id="doc-detail-modal" class="modal" style="display:none">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h3 id="doc-detail-title">Documento</h3>
+                    <button class="modal-close" onclick="closeDocDetailModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <img id="doc-detail-img" src="" alt="Documento" style="width:100%;border-radius:8px">
+                    <p id="doc-detail-date" class="doc-date"></p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-danger" onclick="deleteCurrentDoc()">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                    <button class="btn-secondary" onclick="closeDocDetailModal()">
+                        <i class="fas fa-times"></i> Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para especie cazada -->
+        <div id="species-detail-modal" class="modal" style="display:none">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="species-detail-title">Especie</h3>
+                    <button class="modal-close" onclick="closeSpeciesModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="species-photo-wrapper">
+                        <img id="species-detail-img" src="" alt="Especie" class="species-detail-img">
+                        <button class="btn-species-camera" onclick="event.stopPropagation(); openSpeciesPhotoModal()" title="Cambiar foto">
+                            <i class="fas fa-camera"></i>
+                        </button>
+                    </div>
+                    <div id="species-detail-info" class="species-detail-info"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-primary" id="btn-marcar-cazada" onclick="toggleCazada()">
+                        <i class="fas fa-check"></i> Marcar como Cazada
+                    </button>
+                    <button class="btn-secondary" onclick="closeSpeciesModal()">
+                        <i class="fas fa-times"></i> Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast notifications -->
+        <div id="toast-container" class="toast-container"></div>
+
+        <!-- Modal para foto de especie -->
+        <div id="species-photo-modal" class="modal" style="display:none">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Cambiar foto de especie</h3>
+                    <button class="modal-close" onclick="closeSpeciesPhotoModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="species-photo-preview-container" class="photo-preview-container" style="display:none">
+                        <img id="species-photo-preview" src="" alt="Preview">
+                    </div>
+                    <div class="photo-buttons">
+                        <button class="btn-primary" onclick="triggerSpeciesCamera()">
+                            <i class="fas fa-camera"></i> Hacer foto
+                        </button>
+                        <button class="btn-secondary" onclick="triggerSpeciesGallery()">
+                            <i class="fas fa-image"></i> Galería
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-primary" id="btn-save-species-photo" onclick="saveSpeciesPhoto()" disabled>
+                        <i class="fas fa-save"></i> Guardar foto
+                    </button>
+                    <button class="btn-secondary" onclick="closeSpeciesPhotoModal()">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+        <input type="file" id="species-file-input" accept="image/*" capture="environment" style="display:none">
+        <input type="file" id="species-file-input-gallery" accept="image/*" style="display:none">
+    </div>
+
+    <!-- Google Maps API: Reemplaza YOUR_API_KEY con tu clave de Google Maps -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCSBO4MPils5KdLF1cpqiJkmyW7ilwzlSA&libraries=drawing,geometry"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('SW registered'))
+                .catch(err => console.log('SW failed:', err));
+        }
+    </script>
+</body>
+</html>
