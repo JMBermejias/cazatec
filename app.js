@@ -1085,7 +1085,16 @@ function showSpeciesDetail(id) {
         btnCazada.className = 'btn-primary';
     }
 
+    const btnDelete = document.getElementById('btn-delete-species-detail');
+    btnDelete.style.display = isCustomSpecies(id) ? 'inline-flex' : 'none';
+
     document.getElementById('species-detail-modal').style.display = 'flex';
+}
+
+function deleteSpeciesFromDetail() {
+    if (!currentSpeciesId) return;
+    deleteSpecies(currentSpeciesId);
+    closeSpeciesModal();
 }
 
 function closeSpeciesModal() {
