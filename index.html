@@ -15,7 +15,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="icon" type="image/svg+xml" href="icon.svg">
-    <link rel="stylesheet" href="styles.css?v=4">
+    <link rel="stylesheet" href="styles.css?v=5">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -113,10 +113,17 @@
                         <div class="profile-photo" id="cazador-foto">
                             <i class="fas fa-camera"></i>
                         </div>
-                        <button class="btn-camera" onclick="takePhoto('cazador')">
-                            <i class="fas fa-camera-retro"></i> Foto
-                        </button>
+                        <div class="btn-group" style="justify-content:center">
+                            <button class="btn-camera" onclick="triggerCazadorCamera()">
+                                <i class="fas fa-camera"></i> Foto
+                            </button>
+                            <button class="btn-camera" onclick="triggerCazadorGallery()">
+                                <i class="fas fa-image"></i> Galería
+                            </button>
+                        </div>
                     </div>
+                    <input type="file" id="cazador-file-input" accept="image/*" capture="environment" style="display:none">
+                    <input type="file" id="cazador-file-input-gallery" accept="image/*" style="display:none">
                     <form id="form-cazador" class="form-grid">
                         <div class="form-group">
                             <label>Nombre Completo</label>
@@ -583,10 +590,14 @@
                     <button class="modal-close" onclick="closePhotoModal()">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <input type="file" id="file-input" accept="image/*" capture="environment" style="display:none">
-                    <input type="file" id="file-input-gallery" accept="image/*" style="display:none">
+                    <input type="file" id="file-input" accept="image/*,application/pdf" capture="environment" style="display:none">
+                    <input type="file" id="file-input-gallery" accept="image/*,application/pdf" style="display:none">
                     <div id="photo-preview-container" style="display:none">
-                        <img id="photo-preview" src="" alt="Preview">
+                        <img id="photo-preview" src="" alt="Preview" style="display:none">
+                        <div id="pdf-preview" style="display:none;text-align:center;padding:20px;background:var(--bg-input);border-radius:var(--radius-sm)">
+                            <i class="fas fa-file-pdf" style="font-size:3rem;color:#ef4444"></i>
+                            <p id="pdf-preview-name" style="margin-top:8px;font-weight:600"></p>
+                        </div>
                     </div>
                     <div class="photo-actions">
                         <button class="btn-primary" onclick="triggerCamera()">
@@ -845,8 +856,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-    <script src="firebase-config.js?v=4"></script>
-    <script src="app.js?v=4"></script>
+    <script src="firebase-config.js?v=5"></script>
+    <script src="app.js?v=5"></script>
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistrations().then(function(registrations) {
@@ -854,7 +865,7 @@
                     registration.unregister();
                 }
             });
-            navigator.serviceWorker.register('/sw.js?v=4')
+            navigator.serviceWorker.register('/sw.js?v=5')
                 .then(reg => console.log('SW registered'))
                 .catch(err => console.log('SW failed:', err));
         }

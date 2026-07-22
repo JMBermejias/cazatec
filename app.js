@@ -305,6 +305,11 @@ async function guardarCazador() {
         updatedAt: new Date().toISOString()
     };
 
+    const existing = await DataService.get('cazador', 'perfil');
+    if (existing && existing.foto) {
+        cazador.foto = existing.foto;
+    }
+
     await DataService.save('cazador', 'perfil', cazador);
     showToast('Perfil guardado correctamente');
     updateDashboardStats();
@@ -328,6 +333,33 @@ async function loadCazador() {
             document.getElementById('cazador-foto').innerHTML = `<img src="${cazador.foto}" alt="Foto">`;
         }
     }
+}
+
+function triggerCazadorCamera() {
+    const input = document.getElementById('cazador-file-input');
+    input.onchange = function() { handleCazadorPhoto(this.files[0]); };
+    input.click();
+}
+
+function triggerCazadorGallery() {
+    const input = document.getElementById('cazador-file-input-gallery');
+    input.onchange = function() { handleCazadorPhoto(this.files[0]); };
+    input.click();
+}
+
+async function handleCazadorPhoto(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        const fotoData = e.target.result;
+        document.getElementById('cazador-foto').innerHTML = '<img src="' + fotoData + '" alt="Foto">';
+        const existing = await DataService.get('cazador', 'perfil') || {};
+        existing.foto = fotoData;
+        existing.updatedAt = new Date().toISOString();
+        await DataService.save('cazador', 'perfil', existing);
+        showToast('Foto del perfil actualizada');
+    };
+    reader.readAsDataURL(file);
 }
 
 // ============================================
@@ -850,10 +882,23 @@ function triggerGallery() {
 function handleFileSelect(file) {
     if (!file) return;
 
+    const isPdf = file.type === 'application/pdf';
     const reader = new FileReader();
     reader.onload = function(e) {
         photoData = e.target.result;
-        document.getElementById('photo-preview').src = photoData;
+        const previewImg = document.getElementById('photo-preview');
+        const previewPdf = document.getElementById('pdf-preview');
+        const previewPdfName = document.getElementById('pdf-preview-name');
+
+        if (isPdf) {
+            previewImg.style.display = 'none';
+            previewPdf.style.display = 'block';
+            previewPdfName.textContent = file.name;
+        } else {
+            previewImg.style.display = 'block';
+            previewImg.src = photoData;
+            previewPdf.style.display = 'none';
+        }
         document.getElementById('photo-preview-container').style.display = 'block';
         document.getElementById('btn-save-doc').disabled = false;
     };
@@ -902,12 +947,17 @@ async function loadCazadorDocs() {
         return;
     }
 
-    container.innerHTML = cazadorDocs.map(([id, doc]) => `
+    container.innerHTML = cazadorDocs.map(([id, doc]) => {
+        const isPdf = doc.image && doc.image.startsWith('data:application/pdf');
+        const thumb = isPdf
+            ? '<div class="doc-thumb-empty" style="font-size:1.5rem;color:#ef4444"><i class="fas fa-file-pdf"></i></div>'
+            : `<img src="${doc.image}" alt="${doc.name}">`;
+        return `
         <div class="doc-thumb" onclick="viewDoc('${id}')">
-            <img src="${doc.image}" alt="${doc.name}">
+            ${thumb}
             <div class="doc-thumb-label">${doc.name}</div>
-        </div>
-    `).join('');
+        </div>`;
+    }).join('');
 }
 
 async function loadDocumentsList() {
@@ -921,11 +971,14 @@ async function loadDocumentsList() {
         return;
     }
 
-    container.innerHTML = filtered.map(([id, doc]) => `
+    container.innerHTML = filtered.map(([id, doc]) => {
+        const isPdf = doc.image && doc.image.startsWith('data:application/pdf');
+        const thumb = isPdf
+            ? '<div class="doc-list-thumb"><i class="fas fa-file-pdf" style="font-size:1.5rem;color:#ef4444"></i></div>'
+            : `<div class="doc-list-thumb"><img src="${doc.image}" alt="${doc.name}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-file\\'></i>'"></div>`;
+        return `
         <div class="doc-list-item" onclick="viewDoc('${id}')">
-            <div class="doc-list-thumb">
-                <img src="${doc.image}" alt="${doc.name}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-file\\'></i>'">
-            </div>
+            ${thumb}
             <div class="doc-list-info">
                 <h4>${doc.name}</h4>
                 <p>${doc.category} · ${new Date(doc.createdAt).toLocaleDateString('es-ES')}</p>
@@ -933,8 +986,8 @@ async function loadDocumentsList() {
             <button class="btn-icon danger" onclick="event.stopPropagation();deleteDoc('${id}')" title="Eliminar">
                 <i class="fas fa-trash"></i>
             </button>
-        </div>
-    `).join('');
+        </div>`;
+    }).join('');
 }
 
 function filterDocs(category) {
@@ -951,7 +1004,15 @@ async function viewDoc(id) {
 
     currentDocId = id;
     document.getElementById('doc-detail-title').textContent = doc.name;
-    document.getElementById('doc-detail-img').src = doc.image;
+    const img = document.getElementById('doc-detail-img');
+    if (doc.image && doc.image.startsWith('data:application/pdf')) {
+        img.src = '';
+        img.alt = doc.name;
+        img.style.display = 'none';
+    } else {
+        img.src = doc.image;
+        img.style.display = 'block';
+    }
     document.getElementById('doc-detail-date').textContent = new Date(doc.createdAt).toLocaleDateString('es-ES');
     document.getElementById('doc-detail-modal').style.display = 'flex';
 }
