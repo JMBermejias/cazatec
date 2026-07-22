@@ -853,6 +853,9 @@ function addDocument(type) {
     photoData = null;
     document.getElementById('photo-preview-container').style.display = 'none';
     document.getElementById('photo-preview').src = '';
+    document.getElementById('photo-preview').style.display = 'none';
+    const pdfPrev = document.getElementById('pdf-preview');
+    if (pdfPrev) pdfPrev.style.display = 'none';
     document.getElementById('doc-name-input').value = '';
     document.getElementById('btn-save-doc').disabled = true;
     document.getElementById('photo-modal').style.display = 'flex';
@@ -873,6 +876,14 @@ function triggerCamera() {
 
 function triggerGallery() {
     const input = document.getElementById('file-input-gallery');
+    input.onchange = function() {
+        handleFileSelect(this.files[0]);
+    };
+    input.click();
+}
+
+function triggerFileUpload() {
+    const input = document.getElementById('file-input-doc');
     input.onchange = function() {
         handleFileSelect(this.files[0]);
     };
