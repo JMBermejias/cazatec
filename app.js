@@ -1568,7 +1568,13 @@ function initGeneralMap() {
                 streetViewControl: false
             });
         } else {
-            mapEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;background:#132e18;color:#6b9e70;flex-direction:column;gap:10px"><i class="fas fa-map-marked-alt" style="font-size:3rem"></i><p>Google Maps no disponible</p><p style="font-size:0.75rem">Añade tu API key de Google Maps en index.html</p></div>';
+            const msg = window.googleMapsLoadError
+                ? 'Error al cargar Google Maps API. Comprueba que la API key tiene habilitada Maps JavaScript API y no tiene restricciones de dominio en Google Cloud Console.'
+                : 'Google Maps API aún no cargada. Reintentando...';
+            mapEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;background:#132e18;color:#6b9e70;flex-direction:column;gap:10px;padding:20px;text-align:center"><i class="fas fa-map-marked-alt" style="font-size:3rem"></i><p>' + msg + '</p></div>';
+            if (!window.googleMapsLoadError) {
+                setTimeout(() => initGeneralMap(), 2000);
+            }
             return;
         }
     }

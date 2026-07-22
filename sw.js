@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cazatec-v6';
+const CACHE_NAME = 'cazatec-v7';
 const ASSETS = [
     '/',
     '/index.html',

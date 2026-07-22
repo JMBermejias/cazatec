@@ -15,7 +15,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="icon" type="image/svg+xml" href="icon.svg">
-    <link rel="stylesheet" href="styles.css?v=6">
+    <link rel="stylesheet" href="styles.css?v=7">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -854,14 +854,24 @@
         <input type="file" id="species-file-input-gallery" accept="image/*" style="display:none">
     </div>
 
-    <!-- Google Maps API: Reemplaza YOUR_API_KEY con tu clave de Google Maps -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCSBO4MPils5KdLF1cpqiJkmyW7ilwzlSA&libraries=drawing,geometry"></script>
+    <!-- Google Maps API -->
+    <script>
+        function mapsCallback() {
+            console.log('Google Maps API loaded OK');
+            window.googleMapsLoaded = true;
+        }
+        function mapsError(e) {
+            console.error('Google Maps API failed to load:', e);
+            window.googleMapsLoadError = true;
+        }
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCSBO4MPils5KdLF1cpqiJkmyW7ilwzlSA&libraries=drawing,geometry&callback=mapsCallback" async defer onerror="mapsError()"></script>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-    <script src="firebase-config.js?v=6"></script>
-    <script src="app.js?v=6"></script>
+    <script src="firebase-config.js?v=7"></script>
+    <script src="app.js?v=7"></script>
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistrations().then(function(registrations) {
@@ -869,7 +879,7 @@
                     registration.unregister();
                 }
             });
-            navigator.serviceWorker.register('/sw.js?v=6')
+            navigator.serviceWorker.register('/sw.js?v=7')
                 .then(reg => console.log('SW registered'))
                 .catch(err => console.log('SW failed:', err));
         }
