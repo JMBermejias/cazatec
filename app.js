@@ -985,7 +985,9 @@ async function deleteDoc(id) {
 // ============================================
 function getAllSpecies() {
     const custom = LocalDB.get('species_custom') || [];
-    return [...ESPECIES_CINEGETICAS, ...custom];
+    const hidden = LocalDB.get('species_hidden') || [];
+    const all = [...ESPECIES_CINEGETICAS, ...custom];
+    return all.filter(s => !hidden.includes(s.id));
 }
 
 function isCustomSpecies(id) {
@@ -1094,7 +1096,7 @@ function showSpeciesDetail(id) {
     }
 
     const btnDelete = document.getElementById('btn-delete-species-detail');
-    btnDelete.style.display = isCustomSpecies(id) ? 'inline-flex' : 'none';
+    btnDelete.style.display = 'inline-flex';
 
     document.getElementById('species-detail-modal').style.display = 'flex';
 }
@@ -1190,13 +1192,21 @@ function saveSpeciesPhoto() {
 function deleteSpecies(id) {
     if (!confirm('¿Eliminar esta especie?')) return;
 
-    let custom = LocalDB.get('species_custom') || [];
-    custom = custom.filter(s => s.id !== id);
-    LocalDB.set('species_custom', custom);
+    if (isCustomSpecies(id)) {
+        let custom = LocalDB.get('species_custom') || [];
+        custom = custom.filter(s => s.id !== id);
+        LocalDB.set('species_custom', custom);
 
-    const customPhotos = LocalDB.get('species_custom_photos') || {};
-    delete customPhotos[id];
-    LocalDB.set('species_custom_photos', customPhotos);
+        const customPhotos = LocalDB.get('species_custom_photos') || {};
+        delete customPhotos[id];
+        LocalDB.set('species_custom_photos', customPhotos);
+    } else {
+        let hidden = LocalDB.get('species_hidden') || [];
+        if (!hidden.includes(id)) {
+            hidden.push(id);
+            LocalDB.set('species_hidden', hidden);
+        }
+    }
 
     let cazadas = LocalDB.get('especies_cazadas') || [];
     cazadas = cazadas.filter(c => c !== id);
