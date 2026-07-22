@@ -10,18 +10,18 @@
     --green-800: #2e7d32;
     --green-900: #1b5e20;
     --green-950: #0d3311;
-    --bg-primary: #f1f8f2;
-    --bg-secondary: #f7fbf7;
+    --bg-primary: #e8f5e9;
+    --bg-secondary: #f1f8f2;
     --bg-card: #ffffff;
-    --bg-card-hover: #f5fcf5;
-    --bg-input: #f9fdf9;
-    --text-primary: #2e7d32;
-    --text-secondary: #43a047;
-    --text-muted: #81c784;
-    --border-color: #c8e6c9;
+    --bg-card-hover: #f0faf1;
+    --bg-input: #f5fdf6;
+    --text-primary: #1b5e20;
+    --text-secondary: #2e7d32;
+    --text-muted: #66bb6a;
+    --border-color: #a5d6a7;
     --border-focus: #4caf50;
-    --shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-    --shadow-green: 0 4px 16px rgba(76, 175, 80, 0.12);
+    --shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    --shadow-green: 0 4px 16px rgba(76, 175, 80, 0.15);
     --radius: 12px;
     --radius-sm: 8px;
     --nav-height: 70px;
@@ -62,8 +62,8 @@ body {
     left: 0;
     right: 0;
     height: var(--header-height);
-    background: linear-gradient(135deg, #66bb6a 0%, #81c784 100%);
-    border-bottom: 1px solid #a5d6a7;
+    background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+    border-bottom: 1px solid #81c784;
     z-index: 1000;
     backdrop-filter: blur(20px);
 }
@@ -116,7 +116,7 @@ body {
 
 .header-btn:hover {
     background: rgba(76, 175, 80, 0.15);
-    color: var(--green-300);
+    color: var(--green-400);
 }
 
 .badge {
@@ -173,7 +173,7 @@ body {
 }
 
 .page-header h2 i {
-    color: var(--green-500);
+    color: var(--green-600);
 }
 
 /* BOTTOM NAVIGATION */
@@ -183,8 +183,8 @@ body {
     left: 0;
     right: 0;
     height: var(--nav-height);
-    background: linear-gradient(to top, #66bb6a 0%, #81c784 100%);
-    border-top: 1px solid #a5d6a7;
+    background: linear-gradient(to top, #4caf50 0%, #66bb6a 100%);
+    border-top: 1px solid #81c784;
     display: flex;
     align-items: center;
     justify-content: space-around;
@@ -260,14 +260,14 @@ body {
     font-size: 1rem;
     font-weight: 600;
     margin-bottom: 16px;
-    color: var(--green-600);
+    color: var(--green-700);
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
 .section-card h3 i {
-    color: var(--green-500);
+    color: var(--green-600);
 }
 
 /* DASHBOARD */
@@ -1107,6 +1107,36 @@ body {
 .btn-species-camera:hover {
     background: var(--green-600);
     transform: scale(1.1);
+}
+
+.btn-delete-species {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(220, 38, 38, 0.85);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.7rem;
+    z-index: 2;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.4);
+}
+
+.btn-delete-species:hover {
+    background: #dc2626;
+    transform: scale(1.15);
+}
+
+.custom-species-card {
+    border-style: dashed;
+    border-color: var(--green-400);
 }
 
 .species-detail-info {

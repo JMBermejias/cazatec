@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cazatec-v1';
+const CACHE_NAME = 'cazatec-v3';
 const ASSETS = [
     '/',
     '/index.html',
@@ -28,18 +28,16 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
     event.respondWith(
-        caches.match(event.request).then((cached) => {
-            return cached || fetch(event.request).then((response) => {
-                if (event.request.method === 'GET') {
-                    const clone = response.clone();
-                    caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-                }
-                return response;
-            });
-        }).catch(() => {
-            if (event.request.destination === 'document') {
-                return caches.match('/index.html');
+        fetch(event.request).then((response) => {
+            if (event.request.method === 'GET') {
+                const clone = response.clone();
+                caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
             }
+            return response;
+        }).catch(() => {
+            return caches.match(event.request).then((cached) => {
+                return cached || caches.match('/index.html');
+            });
         })
     );
 });

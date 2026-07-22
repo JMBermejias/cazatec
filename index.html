@@ -448,10 +448,14 @@
                     <button class="filter-btn" onclick="filterSpecies('mayor')">Caza Mayor</button>
                     <button class="filter-btn" onclick="filterSpecies('menor')">Caza Menor</button>
                     <button class="filter-btn" onclick="filterSpecies('cazadas')">Cazadas</button>
+                    <button class="filter-btn" onclick="filterSpecies('custom')">Mis Especies</button>
                 </div>
                 <div id="species-grid" class="species-grid">
                     <!-- Se carga dinámicamente -->
                 </div>
+                <button class="btn-primary btn-full" style="margin-top:12px" onclick="showAddSpeciesForm()">
+                    <i class="fas fa-plus"></i> Añadir Especie
+                </button>
             </section>
 
             <!-- SECCIÓN: Jornadas / Registro -->
@@ -681,6 +685,67 @@
                         <i class="fas fa-save"></i> Guardar foto
                     </button>
                     <button class="btn-secondary" onclick="closeSpeciesPhotoModal()">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal añadir especie -->
+        <div id="add-species-modal" class="modal" style="display:none">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-plus"></i> Nueva Especie</h3>
+                    <button class="modal-close" onclick="closeAddSpeciesForm()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label>Nombre</label>
+                            <input type="text" id="sp-name" placeholder="Ej: Jabalí Albino">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Nombre Científico</label>
+                            <input type="text" id="sp-scientific" placeholder="Ej: Sus scrofa">
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo</label>
+                            <select id="sp-type">
+                                <option value="mayor">Caza Mayor</option>
+                                <option value="menor">Caza Menor</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Grupo</label>
+                            <select id="sp-group">
+                                <option value="1">Grupo 1</option>
+                                <option value="2">Grupo 2</option>
+                                <option value="3">Grupo 3</option>
+                            </select>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Temporada</label>
+                            <input type="text" id="sp-season" placeholder="Ej: Octubre - Febrero">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Descripción</label>
+                            <textarea id="sp-description" placeholder="Descripción de la especie"></textarea>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Regulación</label>
+                            <input type="text" id="sp-regulation" placeholder="Info de regulación">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>URL de imagen (opcional)</label>
+                            <input type="text" id="sp-image-url" placeholder="https://...">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-primary" onclick="saveNewSpecies()">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                    <button class="btn-secondary" onclick="closeAddSpeciesForm()">
                         <i class="fas fa-times"></i> Cancelar
                     </button>
                 </div>

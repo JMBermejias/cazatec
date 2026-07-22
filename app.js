@@ -975,26 +975,44 @@ async function deleteDoc(id) {
 // ============================================
 // ESPECIES CINEGÉTICAS
 // ============================================
+function getAllSpecies() {
+    const custom = LocalDB.get('species_custom') || [];
+    return [...ESPECIES_CINEGETICAS, ...custom];
+}
+
+function isCustomSpecies(id) {
+    const custom = LocalDB.get('species_custom') || [];
+    return custom.some(s => s.id === id);
+}
+
 function renderSpecies(filter = 'todos') {
     currentSpeciesFilter = filter;
     const container = document.getElementById('species-grid');
+    const allSpecies = getAllSpecies();
 
-    let filtered = ESPECIES_CINEGETICAS;
-    if (filter === 'mayor') filtered = ESPECIES_CINEGETICAS.filter(e => e.tipo === 'mayor');
-    if (filter === 'menor') filtered = ESPECIES_CINEGETICAS.filter(e => e.tipo === 'menor');
+    let filtered = allSpecies;
+    if (filter === 'mayor') filtered = allSpecies.filter(e => e.tipo === 'mayor');
+    if (filter === 'menor') filtered = allSpecies.filter(e => e.tipo === 'menor');
+    if (filter === 'custom') {
+        const custom = LocalDB.get('species_custom') || [];
+        filtered = custom;
+    }
 
     const cazadas = LocalDB.get('especies_cazadas') || [];
     const customPhotos = LocalDB.get('species_custom_photos') || {};
 
     if (filter === 'cazadas') {
-        filtered = ESPECIES_CINEGETICAS.filter(e => cazadas.includes(e.id));
+        filtered = allSpecies.filter(e => cazadas.includes(e.id));
     }
 
     container.innerHTML = filtered.map(sp => {
         const img = customPhotos[sp.id] || sp.imagen;
+        const isCustom = isCustomSpecies(sp.id);
+        const delBtn = isCustom ? `<button class="btn-delete-species" onclick="event.stopPropagation(); deleteSpecies('${sp.id}')" title="Eliminar"><i class="fas fa-trash"></i></button>` : '';
         return `
-        <div class="species-card ${cazadas.includes(sp.id) ? 'cazada' : ''}"
+        <div class="species-card ${cazadas.includes(sp.id) ? 'cazada' : ''} ${isCustom ? 'custom-species-card' : ''}"
              onclick="showSpeciesDetail('${sp.id}')">
+            ${delBtn}
             <img class="species-img" src="${img}" alt="${sp.nombre}"
                  onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 300%22%3E%3Crect fill=%22%23132e18%22 width=%22400%22 height=%22300%22/%3E%3Ctext fill=%22%236b9e70%22 font-family=%22sans-serif%22 font-size=%2220%22 text-anchor=%22middle%22 x=%22200%22 y=%22150%22%3E${encodeURIComponent(sp.nombre)}%3C/text%3E%3C/svg%3E'">
             <div class="species-info">
@@ -1017,7 +1035,7 @@ function filterSpecies(filter) {
 }
 
 function showSpeciesDetail(id) {
-    const sp = ESPECIES_CINEGETICAS.find(e => e.id === id);
+    const sp = getAllSpecies().find(e => e.id === id);
     if (!sp) return;
 
     currentSpeciesId = id;
@@ -1150,6 +1168,77 @@ function saveSpeciesPhoto() {
     closeSpeciesPhotoModal();
     renderSpecies(currentSpeciesFilter);
     showToast('Foto de especie actualizada');
+}
+
+function deleteSpecies(id) {
+    if (!confirm('¿Eliminar esta especie?')) return;
+
+    let custom = LocalDB.get('species_custom') || [];
+    custom = custom.filter(s => s.id !== id);
+    LocalDB.set('species_custom', custom);
+
+    const customPhotos = LocalDB.get('species_custom_photos') || {};
+    delete customPhotos[id];
+    LocalDB.set('species_custom_photos', customPhotos);
+
+    let cazadas = LocalDB.get('especies_cazadas') || [];
+    cazadas = cazadas.filter(c => c !== id);
+    LocalDB.set('especies_cazadas', cazadas);
+
+    renderSpecies(currentSpeciesFilter);
+    updateDashboardStats();
+    showToast('Especie eliminada', 'info');
+}
+
+function showAddSpeciesForm() {
+    document.getElementById('sp-name').value = '';
+    document.getElementById('sp-scientific').value = '';
+    document.getElementById('sp-type').value = 'mayor';
+    document.getElementById('sp-group').value = '2';
+    document.getElementById('sp-season').value = '';
+    document.getElementById('sp-description').value = '';
+    document.getElementById('sp-regulation').value = '';
+    document.getElementById('sp-image-url').value = '';
+    document.getElementById('add-species-modal').style.display = 'flex';
+}
+
+function closeAddSpeciesForm() {
+    document.getElementById('add-species-modal').style.display = 'none';
+}
+
+function saveNewSpecies() {
+    const name = document.getElementById('sp-name').value.trim();
+    if (!name) { showToast('Introduce un nombre', 'error'); return; }
+
+    const scientific = document.getElementById('sp-scientific').value.trim() || 'Sin especificar';
+    const type = document.getElementById('sp-type').value;
+    const group = document.getElementById('sp-group').value;
+    const season = document.getElementById('sp-season').value.trim() || 'Sin definir';
+    const desc = document.getElementById('sp-description').value.trim() || '';
+    const reg = document.getElementById('sp-regulation').value.trim() || '';
+    const imgUrl = document.getElementById('sp-image-url').value.trim() || '';
+
+    const id = 'custom-' + Date.now();
+    const newSpecies = {
+        id,
+        nombre: name,
+        nombreCientifico: scientific,
+        tipo: type,
+        imagen: imgUrl || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 300%22%3E%3Crect fill=%22%23132e18%22 width=%22400%22 height=%22300%22/%3E%3Ctext fill=%22%236b9e70%22 font-family=%22sans-serif%22 font-size=%2218%22 text-anchor=%22middle%22 x=%22200%22 y=%22150%22%3E' + encodeURIComponent(name) + '%3C/text%3E%3C/svg%3E',
+        grupo: group,
+        temporada: season,
+        descripcion: desc,
+        regulateInfo: reg
+    };
+
+    let custom = LocalDB.get('species_custom') || [];
+    custom.push(newSpecies);
+    LocalDB.set('species_custom', custom);
+
+    closeAddSpeciesForm();
+    renderSpecies(currentSpeciesFilter);
+    updateDashboardStats();
+    showToast('Especie "' + name + '" añadida');
 }
 
 // ============================================
@@ -1389,7 +1478,7 @@ async function updateDashboardStats() {
     document.getElementById('stat-cazador').textContent = cazador && cazador.nombre ? '1' : '0';
     document.getElementById('stat-cotos').textContent = Object.keys(cotos).length;
     document.getElementById('stat-armas').textContent = Object.keys(armas).length;
-    document.getElementById('stat-especies').textContent = ESPECIES_CINEGETICAS.length;
+    document.getElementById('stat-especies').textContent = getAllSpecies().length;
 
     document.getElementById('season-jornadas').textContent = Object.keys(jornadas).length;
     document.getElementById('season-zonas').textContent = Object.keys(zonas).length;
