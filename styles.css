@@ -1374,6 +1374,28 @@ body {
     text-align: center;
 }
 
+.dog-photo-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.dog-photo-container .profile-photo {
+    width: 90px;
+    height: 90px;
+}
+
+.item-card .dog-thumb {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--border-color);
+    flex-shrink: 0;
+}
+
 /* RESPONSIVE */
 @media (max-width: 768px) {
     .form-grid {

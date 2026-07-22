@@ -255,6 +255,14 @@ function navigateTo(pageId) {
         loadJornadasList();
         populateJornadaSelects();
     }
+    if (pageId === 'page-cazador') {
+        loadCazador();
+        loadCazadorDocs();
+        loadDogsList();
+    }
+    if (pageId === 'page-especies') {
+        renderSpecies(currentSpeciesFilter);
+    }
 }
 
 // ============================================
@@ -1248,6 +1256,138 @@ function saveNewSpecies() {
     renderSpecies(currentSpeciesFilter);
     updateDashboardStats();
     showToast('Especie "' + name + '" añadida');
+}
+
+// ============================================
+// PERROS
+// ============================================
+let editingDogId = null;
+let dogPhotoData = null;
+
+function showDogForm(dog = null) {
+    dogPhotoData = null;
+    document.getElementById('dog-foto-preview').innerHTML = '<i class="fas fa-dog"></i>';
+
+    if (dog) {
+        editingDogId = dog.id;
+        document.getElementById('dog-form-title').innerHTML = '<i class="fas fa-edit"></i> Editar Perro';
+        document.getElementById('dog-nombre').value = dog.nombre || '';
+        document.getElementById('dog-raza').value = dog.raza || '';
+        document.getElementById('dog-sexo').value = dog.sexo || 'macho';
+        document.getElementById('dog-nacimiento').value = dog.nacimiento || '';
+        document.getElementById('dog-microchip').value = dog.microchip || '';
+        document.getElementById('dog-notas').value = dog.notas || '';
+        if (dog.foto) {
+            document.getElementById('dog-foto-preview').innerHTML = '<img src="' + dog.foto + '" alt="Foto">';
+            dogPhotoData = dog.foto;
+        }
+    } else {
+        editingDogId = null;
+        document.getElementById('dog-form-title').innerHTML = '<i class="fas fa-dog"></i> Nuevo Perro';
+        document.getElementById('dog-nombre').value = '';
+        document.getElementById('dog-raza').value = '';
+        document.getElementById('dog-sexo').value = 'macho';
+        document.getElementById('dog-nacimiento').value = '';
+        document.getElementById('dog-microchip').value = '';
+        document.getElementById('dog-notas').value = '';
+    }
+
+    document.getElementById('dog-modal').style.display = 'flex';
+}
+
+function closeDogForm() {
+    document.getElementById('dog-modal').style.display = 'none';
+    editingDogId = null;
+    dogPhotoData = null;
+}
+
+function triggerDogCamera() {
+    const input = document.getElementById('dog-file-input');
+    input.onchange = function() { handleDogFileSelect(this.files[0]); };
+    input.click();
+}
+
+function triggerDogGallery() {
+    const input = document.getElementById('dog-file-input-gallery');
+    input.onchange = function() { handleDogFileSelect(this.files[0]); };
+    input.click();
+}
+
+function handleDogFileSelect(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        dogPhotoData = e.target.result;
+        document.getElementById('dog-foto-preview').innerHTML = '<img src="' + dogPhotoData + '" alt="Foto">';
+    };
+    reader.readAsDataURL(file);
+}
+
+async function saveDog() {
+    const nombre = document.getElementById('dog-nombre').value.trim();
+    if (!nombre) { showToast('Introduce un nombre', 'error'); return; }
+
+    const id = editingDogId || 'dog_' + Date.now();
+    const dog = {
+        nombre: nombre,
+        raza: document.getElementById('dog-raza').value.trim(),
+        sexo: document.getElementById('dog-sexo').value,
+        nacimiento: document.getElementById('dog-nacimiento').value,
+        microchip: document.getElementById('dog-microchip').value.trim(),
+        notas: document.getElementById('dog-notas').value.trim(),
+        foto: dogPhotoData || null,
+        createdAt: editingDogId ? undefined : new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    };
+
+    await DataService.save('perros', id, dog);
+    closeDogForm();
+    loadDogsList();
+    showToast(editingDogId ? 'Perro actualizado' : 'Perro registrado');
+}
+
+async function loadDogsList() {
+    const perros = await DataService.getAll('perros');
+    const container = document.getElementById('cazador-perros');
+
+    if (Object.keys(perros).length === 0) {
+        container.innerHTML = '<p class="empty-state">No hay perros registrados</p>';
+        return;
+    }
+
+    container.innerHTML = Object.entries(perros).map(([id, dog]) => {
+        const fotoHtml = dog.foto
+            ? '<img class="dog-thumb" src="' + dog.foto + '" alt="' + dog.nombre + '">'
+            : '<div class="item-icon green"><i class="fas fa-dog"></i></div>';
+        return `
+        <div class="item-card">
+            ${fotoHtml}
+            <div class="item-info">
+                <h4>${dog.nombre}</h4>
+                <p>${dog.raza || 'Sin raza'} · ${dog.sexo === 'macho' ? '♂ Macho' : '♀ Hembra'}${dog.microchip ? ' · Chip: ' + dog.microchip : ''}</p>
+            </div>
+            <div class="item-actions">
+                <button class="btn-icon" onclick="editDog('${id}')" title="Editar"><i class="fas fa-edit"></i></button>
+                <button class="btn-icon danger" onclick="deleteDog('${id}')" title="Eliminar"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+async function editDog(id) {
+    const dog = await DataService.get('perros', id);
+    if (dog) {
+        dog.id = id;
+        showDogForm(dog);
+    }
+}
+
+async function deleteDog(id) {
+    if (confirm('¿Eliminar este perro?')) {
+        await DataService.remove('perros', id);
+        loadDogsList();
+        showToast('Perro eliminado', 'info');
+    }
 }
 
 // ============================================

@@ -180,6 +180,17 @@
                         <i class="fas fa-plus"></i> Añadir Documento
                     </button>
                 </div>
+
+                <!-- Perros del cazador -->
+                <div class="section-card">
+                    <h3><i class="fas fa-dog"></i> Mis Perros</h3>
+                    <div id="cazador-perros" class="items-list">
+                        <p class="empty-state">No hay perros registrados</p>
+                    </div>
+                    <button class="btn-primary btn-full" onclick="showDogForm()">
+                        <i class="fas fa-plus"></i> Añadir Perro
+                    </button>
+                </div>
             </section>
 
             <!-- SECCIÓN: Documentos -->
@@ -662,6 +673,70 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal perro -->
+        <div id="dog-modal" class="modal" style="display:none">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="dog-form-title"><i class="fas fa-dog"></i> Nuevo Perro</h3>
+                    <button class="modal-close" onclick="closeDogForm()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="dog-photo-container">
+                        <div class="profile-photo" id="dog-foto-preview">
+                            <i class="fas fa-dog"></i>
+                        </div>
+                        <div class="btn-group" style="justify-content:center">
+                            <button class="btn-camera" onclick="triggerDogCamera()">
+                                <i class="fas fa-camera"></i> Foto
+                            </button>
+                            <button class="btn-camera" onclick="triggerDogGallery()">
+                                <i class="fas fa-image"></i> Galería
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label>Nombre</label>
+                            <input type="text" id="dog-nombre" placeholder="Nombre del perro">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Raza</label>
+                            <input type="text" id="dog-raza" placeholder="Ej: Pointer, Braco, Labrador...">
+                        </div>
+                        <div class="form-group">
+                            <label>Sexo</label>
+                            <select id="dog-sexo">
+                                <option value="macho">Macho</option>
+                                <option value="hembra">Hembra</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha de Nacimiento</label>
+                            <input type="date" id="dog-nacimiento">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Microchip</label>
+                            <input type="text" id="dog-microchip" placeholder="Nº de microchip">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Notas</label>
+                            <textarea id="dog-notas" placeholder="Anotaciones sobre el perro"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-primary" onclick="saveDog()">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                    <button class="btn-secondary" onclick="closeDogForm()">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+        <input type="file" id="dog-file-input" accept="image/*" capture="environment" style="display:none">
+        <input type="file" id="dog-file-input-gallery" accept="image/*" style="display:none">
 
         <!-- Toast notifications -->
         <div id="toast-container" class="toast-container"></div>
