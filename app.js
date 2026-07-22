@@ -986,7 +986,8 @@ async function deleteDoc(id) {
 function getAllSpecies() {
     const custom = LocalDB.get('species_custom') || [];
     const hidden = LocalDB.get('species_hidden') || [];
-    const all = [...ESPECIES_CINEGETICAS, ...custom];
+    const overrides = LocalDB.get('species_overrides') || {};
+    const all = ESPECIES_CINEGETICAS.map(s => overrides[s.id] ? { ...s, ...overrides[s.id] } : s).concat(custom);
     return all.filter(s => !hidden.includes(s.id));
 }
 
@@ -1218,6 +1219,7 @@ function deleteSpecies(id) {
 }
 
 function showAddSpeciesForm() {
+    editingSpeciesId = null;
     document.getElementById('sp-name').value = '';
     document.getElementById('sp-scientific').value = '';
     document.getElementById('sp-type').value = 'mayor';
@@ -1226,11 +1228,15 @@ function showAddSpeciesForm() {
     document.getElementById('sp-description').value = '';
     document.getElementById('sp-regulation').value = '';
     document.getElementById('sp-image-url').value = '';
+    document.getElementById('add-species-modal').querySelector('.modal-header h3').innerHTML = '<i class="fas fa-plus"></i> Nueva Especie';
+    document.getElementById('btn-save-species-form').onclick = saveNewSpecies;
     document.getElementById('add-species-modal').style.display = 'flex';
 }
 
 function closeAddSpeciesForm() {
     document.getElementById('add-species-modal').style.display = 'none';
+    editingSpeciesId = null;
+    document.getElementById('add-species-modal').querySelector('.modal-header h3').innerHTML = '<i class="fas fa-plus"></i> Nueva Especie';
 }
 
 function saveNewSpecies() {
@@ -1266,6 +1272,68 @@ function saveNewSpecies() {
     renderSpecies(currentSpeciesFilter);
     updateDashboardStats();
     showToast('Especie "' + name + '" añadida');
+}
+
+let editingSpeciesId = null;
+
+function openEditSpeciesFromDetail() {
+    if (!currentSpeciesId) return;
+    const sp = getAllSpecies().find(e => e.id === currentSpeciesId);
+    if (!sp) return;
+
+    editingSpeciesId = currentSpeciesId;
+    document.getElementById('add-species-modal').querySelector('.modal-header h3').innerHTML = '<i class="fas fa-edit"></i> Editar Especie';
+    document.getElementById('sp-name').value = sp.nombre || '';
+    document.getElementById('sp-scientific').value = sp.nombreCientifico || '';
+    document.getElementById('sp-type').value = sp.tipo || 'mayor';
+    document.getElementById('sp-group').value = sp.grupo || '2';
+    document.getElementById('sp-season').value = sp.temporada || '';
+    document.getElementById('sp-description').value = sp.descripcion || '';
+    document.getElementById('sp-regulation').value = sp.regulateInfo || '';
+    document.getElementById('sp-image-url').value = (sp.imagen && sp.imagen.startsWith('http')) ? sp.imagen : '';
+    document.getElementById('btn-save-species-form').onclick = saveEditedSpecies;
+    document.getElementById('add-species-modal').style.display = 'flex';
+}
+
+function saveEditedSpecies() {
+    const name = document.getElementById('sp-name').value.trim();
+    if (!name) { showToast('Introduce un nombre', 'error'); return; }
+
+    const scientific = document.getElementById('sp-scientific').value.trim() || 'Sin especificar';
+    const type = document.getElementById('sp-type').value;
+    const group = document.getElementById('sp-group').value;
+    const season = document.getElementById('sp-season').value.trim() || 'Sin definir';
+    const desc = document.getElementById('sp-description').value.trim() || '';
+    const reg = document.getElementById('sp-regulation').value.trim() || '';
+    const imgUrl = document.getElementById('sp-image-url').value.trim() || '';
+
+    const updated = {
+        nombre: name,
+        nombreCientifico: scientific,
+        tipo: type,
+        imagen: imgUrl || null,
+        grupo: group,
+        temporada: season,
+        descripcion: desc,
+        regulateInfo: reg
+    };
+
+    if (isCustomSpecies(editingSpeciesId)) {
+        let custom = LocalDB.get('species_custom') || [];
+        custom = custom.map(s => s.id === editingSpeciesId ? { ...s, ...updated } : s);
+        LocalDB.set('species_custom', custom);
+    } else {
+        let overrides = LocalDB.get('species_overrides') || {};
+        overrides[editingSpeciesId] = updated;
+        LocalDB.set('species_overrides', overrides);
+    }
+
+    closeAddSpeciesForm();
+    editingSpeciesId = null;
+    document.getElementById('add-species-modal').querySelector('.modal-header h3').innerHTML = '<i class="fas fa-plus"></i> Nueva Especie';
+    closeSpeciesModal();
+    renderSpecies(currentSpeciesFilter);
+    showToast('Especie actualizada');
 }
 
 // ============================================

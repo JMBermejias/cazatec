@@ -664,6 +664,9 @@
                     <button class="btn-primary" id="btn-marcar-cazada" onclick="toggleCazada()">
                         <i class="fas fa-check"></i> Marcar como Cazada
                     </button>
+                    <button class="btn-secondary" id="btn-edit-species-detail" onclick="openEditSpeciesFromDetail()">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
                     <button class="btn-danger" id="btn-delete-species-detail" onclick="deleteSpeciesFromDetail()" style="display:none">
                         <i class="fas fa-trash"></i> Eliminar
                     </button>
@@ -823,7 +826,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn-primary" onclick="saveNewSpecies()">
+                    <button class="btn-primary" id="btn-save-species-form" onclick="saveNewSpecies()">
                         <i class="fas fa-save"></i> Guardar
                     </button>
                     <button class="btn-secondary" onclick="closeAddSpeciesForm()">
