@@ -1,13 +1,12 @@
 const CACHE_NAME = 'cazatec-v8';
-const BASE = self.location.pathname.replace(/\/[^/]*$/, '/');
 const ASSETS = [
-    BASE + 'index.html',
-    BASE + 'styles.css',
-    BASE + 'app.js',
-    BASE + 'firebase-config.js',
-    BASE + 'manifest.json',
-    BASE + 'icon-192.png',
-    BASE + 'icon-512.png'
+    '/index.html',
+    '/styles.css',
+    '/app.js',
+    '/firebase-config.js',
+    '/manifest.json',
+    '/icon-192.png',
+    '/icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
