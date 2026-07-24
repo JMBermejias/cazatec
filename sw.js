@@ -1,12 +1,13 @@
-const CACHE_NAME = 'cazatec-v8';
+const CACHE_NAME = 'cazatec-v9';
+const BASE = new URL('.', self.location.href).pathname;
 const ASSETS = [
-    '/index.html',
-    '/styles.css',
-    '/app.js',
-    '/firebase-config.js',
-    '/manifest.json',
-    '/icon-192.png',
-    '/icon-512.png'
+    BASE + 'index.html',
+    BASE + 'styles.css',
+    BASE + 'app.js',
+    BASE + 'firebase-config.js',
+    BASE + 'manifest.json',
+    BASE + 'icon-192.png',
+    BASE + 'icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
