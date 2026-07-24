@@ -874,7 +874,7 @@
     <script src="app.js?v=8"></script>
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js').then(function(reg) {
+            navigator.serviceWorker.register('sw.js').then(function(reg) {
                 console.log('SW registered');
                 reg.onupdatefound = function() {
                     const newWorker = reg.installing;
