@@ -1824,6 +1824,46 @@ async function loadRecentActivity(jornadas, cotos) {
 }
 
 // ============================================
+// EXPORT / IMPORT
+// ============================================
+function exportData() {
+    const data = LocalDB.exportAll();
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'cazatec-backup-' + new Date().toISOString().split('T')[0] + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Datos exportados correctamente');
+}
+
+function importData() {
+    document.getElementById('import-file-input').click();
+}
+
+function setupImportListener() {
+    const input = document.getElementById('import-file-input');
+    if (!input) return;
+    input.onchange = function() {
+        const file = this.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            try {
+                LocalDB.importAll(e.target.result);
+                showToast('Datos importados. Recargando...');
+                setTimeout(function() { window.location.reload(); }, 1000);
+            } catch (err) {
+                showToast('Error al importar datos');
+            }
+        };
+        reader.readAsText(file);
+        input.value = '';
+    };
+}
+
+// ============================================
 // INITIALIZATION
 // ============================================
 async function initApp() {
@@ -1836,6 +1876,7 @@ async function initApp() {
     await updateDashboardStats();
     await loadCazadorDocs();
 
+    setupImportListener();
     initGoogleMaps();
     console.log('Cazatec initialized');
 }

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cazatec-v10';
+const CACHE_NAME = 'cazatec-v11';
 const BASE = new URL('.', self.location.href).pathname;
 const ASSETS = [
     BASE + 'index.html',
@@ -7,7 +7,8 @@ const ASSETS = [
     BASE + 'firebase-config.js',
     BASE + 'manifest.json',
     BASE + 'icon-192.png',
-    BASE + 'icon-512.png'
+    BASE + 'icon-512.png',
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css'
 ];
 
 self.addEventListener('install', (event) => {
@@ -59,15 +60,14 @@ self.addEventListener('fetch', (event) => {
 
     event.respondWith(
         caches.match(event.request).then((cached) => {
-            const fetchPromise = fetch(event.request).then((response) => {
-                if (response.ok) {
+            if (cached) return cached;
+            return fetch(event.request).then((response) => {
+                if (response.ok && event.request.url.startsWith('http')) {
                     const clone = response.clone();
                     caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
                 }
                 return response;
-            }).catch(() => cached);
-
-            return cached || fetchPromise;
+            }).catch(() => new Response('', { status: 503 }));
         })
     );
 });
