@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cazatec-v11';
+const CACHE_NAME = 'cazatec-v12';
 const BASE = new URL('.', self.location.href).pathname;
 const ASSETS = [
     BASE + 'index.html',
@@ -8,6 +8,8 @@ const ASSETS = [
     BASE + 'manifest.json',
     BASE + 'icon-192.png',
     BASE + 'icon-512.png',
+    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css'
 ];
 

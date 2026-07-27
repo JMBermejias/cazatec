@@ -1541,14 +1541,29 @@ async function deleteDog(id) {
 }
 
 // ============================================
-// GOOGLE MAPS
+// MAPS (Leaflet + OpenStreetMap)
 // ============================================
-function initGoogleMaps() {
-    if (typeof google !== 'undefined' && google.maps) {
-        console.log('Google Maps loaded');
-    } else {
-        console.warn('Google Maps not loaded. Add your API key.');
-    }
+function initGoogleMaps() {}
+
+const cotoIcon = L.divIcon({
+    className: '',
+    html: '<div style="width:28px;height:28px;background:#22c55e;border:2px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,.3)"><span style="color:#fff;font-size:14px">⛰</span></div>',
+    iconSize: [28, 28],
+    iconAnchor: [14, 14]
+});
+
+const zonaCenterIcon = L.divIcon({
+    className: '',
+    html: '<div style="width:24px;height:24px;background:#3b82f6;border:2px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,.3)"><span style="color:#fff;font-size:10px">📍</span></div>',
+    iconSize: [24, 24],
+    iconAnchor: [12, 12]
+});
+
+function createTileLayer() {
+    return L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap',
+        maxZoom: 19
+    });
 }
 
 function initGeneralMap() {
@@ -1556,27 +1571,9 @@ function initGeneralMap() {
     if (!mapEl) return;
 
     if (!generalMap) {
-        const center = { lat: 40.0, lng: -3.7 };
-
-        if (typeof google !== 'undefined' && google.maps) {
-            generalMap = new google.maps.Map(mapEl, {
-                center: center,
-                zoom: 6,
-                styles: getMapStyle(),
-                mapTypeControl: true,
-                fullscreenControl: true,
-                streetViewControl: false
-            });
-        } else {
-            const msg = window.googleMapsLoadError
-                ? 'Error al cargar Google Maps API. Comprueba que la API key tiene habilitada Maps JavaScript API y no tiene restricciones de dominio en Google Cloud Console.'
-                : 'Google Maps API aún no cargada. Reintentando...';
-            mapEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;background:#132e18;color:#6b9e70;flex-direction:column;gap:10px;padding:20px;text-align:center"><i class="fas fa-map-marked-alt" style="font-size:3rem"></i><p>' + msg + '</p></div>';
-            if (!window.googleMapsLoadError) {
-                setTimeout(() => initGeneralMap(), 2000);
-            }
-            return;
-        }
+        generalMap = L.map(mapEl, { zoomControl: true }).setView([40.0, -3.7], 6);
+        createTileLayer().addTo(generalMap);
+        setTimeout(() => generalMap.invalidateSize(), 200);
     }
 
     loadMapMarkers();
@@ -1585,8 +1582,8 @@ function initGeneralMap() {
 async function loadMapMarkers() {
     if (!generalMap) return;
 
-    allMarkers.forEach(m => m.setMap(null));
-    allPolygons.forEach(p => p.setMap(null));
+    allMarkers.forEach(m => generalMap.removeLayer(m));
+    allPolygons.forEach(p => generalMap.removeLayer(p));
     allMarkers = [];
     allPolygons = [];
 
@@ -1595,60 +1592,22 @@ async function loadMapMarkers() {
 
     Object.entries(cotos).forEach(([id, coto]) => {
         if (coto.lat && coto.lng) {
-            const marker = new google.maps.Marker({
-                position: { lat: coto.lat, lng: coto.lng },
-                map: generalMap,
-                title: coto.nombre,
-                icon: {
-                    url: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="16" cy="16" r="14" fill="#22c55e" stroke="#fff" stroke-width="2"/><text x="16" y="21" text-anchor="middle" font-size="16" fill="white">⛰</text></svg>'),
-                    scaledSize: new google.maps.Size(32, 32)
-                }
-            });
-
-            const info = new google.maps.InfoWindow({
-                content: `<div style="color:#333;padding:4px"><strong>${coto.nombre}</strong><br><small>${coto.ubicacion || ''}</small><br><small>${coto.superficie ? coto.superficie + ' ha' : ''}</small></div>`
-            });
-
-            marker.addListener('click', () => info.open(generalMap, marker));
+            const marker = L.marker([coto.lat, coto.lng], { icon: cotoIcon }).addTo(generalMap);
+            marker.bindPopup('<strong>' + coto.nombre + '</strong><br><small>' + (coto.ubicacion || '') + '</small><br><small>' + (coto.superficie ? coto.superficie + ' ha' : '') + '</small>');
             allMarkers.push(marker);
         }
     });
 
     Object.entries(zonas).forEach(([id, zona]) => {
         if (zona.points && zona.points.length >= 3) {
-            const polygon = new google.maps.Polygon({
-                paths: zona.points,
-                map: generalMap,
-                strokeColor: '#ef4444',
-                strokeOpacity: 0.8,
-                strokeWeight: 2,
-                fillColor: '#ef4444',
-                fillOpacity: 0.15,
-                editable: false
-            });
-
-            const info = new google.maps.InfoWindow({
-                content: `<div style="color:#333;padding:4px"><strong>${zona.nombre}</strong><br><small>${zona.especies || ''}</small></div>`
-            });
-
-            polygon.addListener('click', (e) => {
-                info.setPosition(e.latLng);
-                info.open(generalMap);
-            });
-
+            const latlngs = zona.points.map(p => [p.lat || p[0], p.lng || p[1]]);
+            const polygon = L.polygon(latlngs, { color: '#ef4444', weight: 2, fillColor: '#ef4444', fillOpacity: 0.15 }).addTo(generalMap);
+            polygon.bindPopup('<strong>' + zona.nombre + '</strong><br><small>' + (zona.especies || '') + '</small>');
             allPolygons.push(polygon);
         }
-
         if (zona.center) {
-            const marker = new google.maps.Marker({
-                position: zona.center,
-                map: generalMap,
-                title: zona.nombre,
-                icon: {
-                    url: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28"><circle cx="14" cy="14" r="12" fill="#3b82f6" stroke="#fff" stroke-width="2"/><text x="14" y="18" text-anchor="middle" font-size="12" fill="white">📍</text></svg>'),
-                    scaledSize: new google.maps.Size(28, 28)
-                }
-            });
+            const marker = L.marker([zona.center.lat, zona.center.lng], { icon: zonaCenterIcon }).addTo(generalMap);
+            marker.bindPopup('<strong>' + zona.nombre + '</strong>');
             allMarkers.push(marker);
         }
     });
@@ -1658,99 +1617,61 @@ function initCotoMap() {
     const mapEl = document.getElementById('map-coto');
     if (!mapEl || cotoMap) return;
 
-    const center = { lat: 40.0, lng: -3.7 };
+    cotoMap = L.map(mapEl, { zoomControl: true }).setView([40.0, -3.7], 8);
+    createTileLayer().addTo(cotoMap);
+    setTimeout(() => cotoMap.invalidateSize(), 200);
 
-    if (typeof google !== 'undefined' && google.maps) {
-        cotoMap = new google.maps.Map(mapEl, {
-            center: center,
-            zoom: 8,
-            styles: getMapStyle()
-        });
-
-        cotoMap.addListener('click', function(e) {
-            if (cotoMarker) cotoMarker.setMap(null);
-            cotoMarker = new google.maps.Marker({
-                position: e.latLng,
-                map: cotoMap,
-                icon: {
-                    url: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><circle cx="18" cy="18" r="16" fill="#22c55e" stroke="#fff" stroke-width="3"/></svg>'),
-                    scaledSize: new google.maps.Size(36, 36)
-                }
-            });
-        });
-    }
+    cotoMap.on('click', function(e) {
+        if (cotoMarker) cotoMap.removeLayer(cotoMarker);
+        cotoMarker = L.marker(e.latlng, {
+            icon: L.divIcon({
+                className: '',
+                html: '<div style="width:32px;height:32px;background:#22c55e;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,.3)"></div>',
+                iconSize: [32, 32],
+                iconAnchor: [16, 16]
+            })
+        }).addTo(cotoMap);
+    });
 }
 
 function initZonaMap() {
     const mapEl = document.getElementById('map-zona');
     if (!mapEl || zonaMap) return;
 
-    const center = { lat: 40.0, lng: -3.7 };
+    zonaMap = L.map(mapEl, { zoomControl: true }).setView([40.0, -3.7], 10);
+    createTileLayer().addTo(zonaMap);
+    setTimeout(() => zonaMap.invalidateSize(), 200);
 
-    if (typeof google !== 'undefined' && google.maps) {
-        zonaMap = new google.maps.Map(mapEl, {
-            center: center,
-            zoom: 10,
-            styles: getMapStyle()
-        });
+    zonaMap.on('click', function(e) {
+        const marker = L.marker(e.latlng, {
+            icon: L.divIcon({
+                className: '',
+                html: '<div style="width:18px;height:18px;background:#ef4444;border:2px solid #fff;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,.3)"></div>',
+                iconSize: [18, 18],
+                iconAnchor: [9, 9]
+            })
+        }).addTo(zonaMap);
+        zonaMarkers.push(marker);
+        updateZonaPolygon();
+    });
 
-        zonaMap.addListener('click', function(e) {
-            const marker = new google.maps.Marker({
-                position: e.latLng,
-                map: zonaMap,
-                icon: {
-                    url: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><circle cx="10" cy="10" r="8" fill="#ef4444" stroke="#fff" stroke-width="2"/></svg>'),
-                    scaledSize: new google.maps.Size(20, 20)
-                }
-            });
-            zonaMarkers.push(marker);
+    zonaMap.on('dblclick', function(e) {
+        L.DomEvent.preventDefault(e);
+        if (zonaMarkers.length >= 3) {
             updateZonaPolygon();
-        });
-
-        google.maps.event.addListener(zonaMap, 'dblclick', function(e) {
-            e.preventDefault();
-            if (zonaMarkers.length >= 3) {
-                updateZonaPolygon();
-            }
-        });
-    }
-}
-
-function updateZonaPolygon() {
-    if (zonaPolygon) zonaPolygon.setMap(null);
-    if (zonaMarkers.length < 3) return;
-
-    const path = zonaMarkers.map(m => m.getPosition());
-
-    zonaPolygon = new google.maps.Polygon({
-        paths: path,
-        map: zonaMap,
-        strokeColor: '#ef4444',
-        strokeOpacity: 0.8,
-        strokeWeight: 2,
-        fillColor: '#ef4444',
-        fillOpacity: 0.2,
-        editable: true
+        }
     });
 }
 
-function getMapStyle() {
-    return [
-        { elementType: "geometry", stylers: [{ color: "#1d2c4d" }] },
-        { elementType: "labels.text.fill", stylers: [{ color: "#8ec3b9" }] },
-        { elementType: "labels.text.stroke", stylers: [{ color: "#1a3646" }] },
-        { featureType: "administrative.country", elementType: "geometry.stroke", stylers: [{ color: "#4b6878" }] },
-        { featureType: "land", elementType: "geometry", stylers: [{ color: "#16213e" }] },
-        { featureType: "poi", elementType: "geometry", stylers: [{ color: "#283e59" }] },
-        { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#6f9ba5" }] },
-        { featureType: "road", elementType: "geometry", stylers: [{ color: "#304a7d" }] },
-        { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#98a5be" }] },
-        { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#2c6675" }] },
-        { featureType: "transit", elementType: "labels.text.fill", stylers: [{ color: "#98a5be" }] },
-        { featureType: "water", elementType: "geometry", stylers: [{ color: "#0e1626" }] },
-        { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#4e6d70" }] }
-    ];
+function updateZonaPolygon() {
+    if (zonaPolygon) zonaMap.removeLayer(zonaPolygon);
+    if (zonaMarkers.length < 3) return;
+
+    const latlngs = zonaMarkers.map(m => m.getLatLng());
+    zonaPolygon = L.polygon(latlngs, { color: '#ef4444', weight: 2, fillColor: '#ef4444', fillOpacity: 0.2 }).addTo(zonaMap);
 }
+
+function getMapStyle() { return []; }
 
 function verTodosCotos() {
     document.querySelectorAll('.map-controls .btn-sm').forEach(b => b.classList.remove('active'));
@@ -1761,13 +1682,13 @@ function verTodosCotos() {
 function verCotosEnMapa() {
     document.querySelectorAll('.map-controls .btn-sm').forEach(b => b.classList.remove('active'));
     document.getElementById('btn-ver-cotos').classList.add('active');
-    allPolygons.forEach(p => p.setMap(null));
+    allPolygons.forEach(p => generalMap.removeLayer(p));
 }
 
 function verZonasEnMapa() {
     document.querySelectorAll('.map-controls .btn-sm').forEach(b => b.classList.remove('active'));
     document.getElementById('btn-ver-zonas').classList.add('active');
-    allMarkers.forEach(m => m.setMap(null));
+    allMarkers.forEach(m => generalMap.removeLayer(m));
 }
 
 // ============================================
