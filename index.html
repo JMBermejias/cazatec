@@ -15,7 +15,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="icon" type="image/svg+xml" href="icon.svg">
-    <link rel="stylesheet" href="styles.css?v=8">
+    <link rel="stylesheet" href="styles.css?v=11">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -100,6 +100,17 @@
                             <label>Zonas</label>
                         </div>
                     </div>
+                </div>
+
+                <div class="section-card">
+                    <h3><i class="fas fa-sync-alt"></i> Datos</h3>
+                    <button class="btn-secondary btn-full" onclick="exportData()" style="margin-bottom:8px">
+                        <i class="fas fa-download"></i> Exportar Datos
+                    </button>
+                    <button class="btn-secondary btn-full" onclick="importData()">
+                        <i class="fas fa-upload"></i> Importar Datos
+                    </button>
+                    <input type="file" id="import-file-input" accept=".json" style="display:none">
                 </div>
             </section>
 
@@ -854,26 +865,20 @@
         <input type="file" id="species-file-input-gallery" accept="image/*" style="display:none">
     </div>
 
-    <!-- Google Maps API -->
+    <!-- Google Maps API (optional, degrades gracefully offline) -->
     <script>
         function mapsCallback() {
-            console.log('Google Maps API loaded OK');
             window.googleMapsLoaded = true;
         }
         function mapsError(e) {
-            console.error('Google Maps API failed to load:', e);
             window.googleMapsLoadError = true;
         }
     </script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCSBO4MPils5KdLF1cpqiJkmyW7ilwzlSA&libraries=drawing,geometry&callback=mapsCallback" async defer onerror="mapsError()"></script>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-    <script src="firebase-config.js?v=8"></script>
-    <script src="app.js?v=8"></script>
+    <script src="firebase-config.js?v=11"></script>
+    <script src="app.js?v=11"></script>
     <script>
-        var SW_VERSION = 'v10';
+        var SW_VERSION = 'v11';
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js?' + SW_VERSION).then(function(reg) {
                 console.log('SW registered');
