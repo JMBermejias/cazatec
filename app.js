@@ -19,10 +19,12 @@ let generalMap = null;
 let cotoMap = null;
 let zonaMap = null;
 let cotoMarker = null;
+let pendingCotoLatLng = null;
 let zonaMarkers = [];
 let zonaPolygon = null;
-let allMarkers = [];
-let allPolygons = [];
+let cotoMarkers = [];
+let zonaPolygonLayers = [];
+let zonaCenterMarkers = [];
 
 // ============================================
 // ESPANISH HUNTING SPECIES DATABASE
@@ -260,9 +262,24 @@ function navigateTo(pageId) {
         loadCazadorDocs();
         loadDogsList();
     }
+    if (pageId === 'page-armas') {
+        loadArmasDocs();
+    }
     if (pageId === 'page-especies') {
         renderSpecies(currentSpeciesFilter);
     }
+}
+
+// ============================================
+// HTML ESCAPING
+// ============================================
+function escapeHTML(str) {
+    return String(str == null ? '' : str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 // ============================================
@@ -397,6 +414,7 @@ function hideArmaForm() {
 
 async function guardarArma() {
     const id = editingArmaId || 'arma_' + Date.now();
+    const wasEditing = !!editingArmaId;
     const arma = {
         marca: document.getElementById('arma-marca').value,
         modelo: document.getElementById('arma-modelo').value,
@@ -412,7 +430,7 @@ async function guardarArma() {
     await DataService.save('armas', id, arma);
     hideArmaForm();
     loadArmasList();
-    showToast(editingArmaId ? 'Arma actualizada' : 'Arma registrada');
+    showToast(wasEditing ? 'Arma actualizada' : 'Arma registrada');
     updateDashboardStats();
 }
 
@@ -447,8 +465,8 @@ async function loadArmasList() {
                 <i class="${iconMap[arma.tipo] || 'fas fa-gun'}"></i>
             </div>
             <div class="item-info">
-                <h4>${arma.marca} ${arma.modelo}</h4>
-                <p>${arma.tipo || 'Sin tipo'} · ${arma.calibre || 'Sin calibre'} · S/N: ${arma.serie || '-'}</p>
+                <h4>${escapeHTML(arma.marca)} ${escapeHTML(arma.modelo)}</h4>
+                <p>${escapeHTML(arma.tipo || 'Sin tipo')} · ${escapeHTML(arma.calibre || 'Sin calibre')} · S/N: ${escapeHTML(arma.serie || '-')}</p>
             </div>
             <div class="item-actions">
                 <button class="btn-icon" onclick="editArma('${id}')" title="Editar"><i class="fas fa-edit"></i></button>
@@ -482,6 +500,12 @@ function showCotoForm(coto = null) {
     const container = document.getElementById('coto-form-container');
     container.style.display = 'block';
 
+    if (cotoMarker) {
+        if (cotoMap) cotoMap.removeLayer(cotoMarker);
+        cotoMarker = null;
+    }
+    pendingCotoLatLng = (coto && coto.lat && coto.lng) ? { lat: coto.lat, lng: coto.lng } : null;
+
     if (coto) {
         editingCotoId = coto.id;
         document.getElementById('coto-form-title').innerHTML = '<i class="fas fa-edit"></i> Editar Coto';
@@ -508,16 +532,25 @@ function hideCotoForm() {
     document.getElementById('map-picker').style.display = 'none';
     editingCotoId = null;
     document.getElementById('form-coto').reset();
+    if (cotoMarker) {
+        if (cotoMap) cotoMap.removeLayer(cotoMarker);
+        cotoMarker = null;
+    }
+    pendingCotoLatLng = null;
 }
 
 function showMapPicker() {
     const picker = document.getElementById('map-picker');
     picker.style.display = 'block';
-    setTimeout(() => initCotoMap(), 100);
+    setTimeout(() => {
+        initCotoMap();
+        if (cotoMap) cotoMap.invalidateSize();
+    }, 100);
 }
 
 async function guardarCoto() {
     const id = editingCotoId || 'coto_' + Date.now();
+    const wasEditing = !!editingCotoId;
     const coto = {
         nombre: document.getElementById('coto-nombre').value,
         ubicacion: document.getElementById('coto-ubicacion').value,
@@ -528,15 +561,15 @@ async function guardarCoto() {
         expediente: document.getElementById('coto-expediente').value,
         temporada: document.getElementById('coto-temporada').value,
         descripcion: document.getElementById('coto-descripcion').value,
-        lat: cotoMarker ? cotoMarker.getPosition().lat() : null,
-        lng: cotoMarker ? cotoMarker.getPosition().lng() : null,
+        lat: cotoMarker ? cotoMarker.getLatLng().lat : null,
+        lng: cotoMarker ? cotoMarker.getLatLng().lng : null,
         updatedAt: new Date().toISOString()
     };
 
     await DataService.save('cotos', id, coto);
     hideCotoForm();
     loadCotosList();
-    showToast(editingCotoId ? 'Coto actualizado' : 'Coto registrado');
+    showToast(wasEditing ? 'Coto actualizado' : 'Coto registrado');
     updateDashboardStats();
 }
 
@@ -555,8 +588,8 @@ async function loadCotosList() {
                 <i class="fas fa-mountain"></i>
             </div>
             <div class="item-info">
-                <h4>${coto.nombre}</h4>
-                <p>${coto.ubicacion || ''} · ${coto.superficie ? coto.superficie + ' ha' : ''} · ${coto.tipo || ''}</p>
+                <h4>${escapeHTML(coto.nombre)}</h4>
+                <p>${escapeHTML(coto.ubicacion || '')} · ${coto.superficie ? escapeHTML(coto.superficie) + ' ha' : ''} · ${escapeHTML(coto.tipo || '')}</p>
             </div>
             <div class="item-actions">
                 <button class="btn-icon" onclick="editCoto('${id}')" title="Editar"><i class="fas fa-edit"></i></button>
@@ -589,12 +622,11 @@ async function deleteCoto(id) {
 function showZonaForm(zona = null) {
     const container = document.getElementById('zona-form-container');
     container.style.display = 'block';
-    populateZonaSelects();
+    populateZonaSelects(zona ? zona.cotoId : '');
 
     if (zona) {
         editingZonaId = zona.id;
         document.getElementById('zona-nombre').value = zona.nombre || '';
-        document.getElementById('zona-coto').value = zona.cotoId || '';
         document.getElementById('zona-especies').value = zona.especies || '';
         document.getElementById('zona-descripcion').value = zona.descripcion || '';
     } else {
@@ -609,41 +641,49 @@ function hideZonaForm() {
     document.getElementById('zona-form-container').style.display = 'none';
     document.getElementById('zone-draw-map').style.display = 'none';
     editingZonaId = null;
-    zonaMarkers = [];
+    if (zonaMarkers.length > 0) {
+        zonaMarkers.forEach(m => { if (zonaMap) zonaMap.removeLayer(m); });
+        zonaMarkers = [];
+    }
     if (zonaPolygon) {
-        zonaPolygon.setMap(null);
+        if (zonaMap) zonaMap.removeLayer(zonaPolygon);
         zonaPolygon = null;
     }
 }
 
-async function populateZonaSelects() {
+async function populateZonaSelects(selected = '') {
     const cotos = await DataService.getAll('cotos');
     const select = document.getElementById('zona-coto');
     select.innerHTML = '<option value="">Sin coto</option>' +
         Object.entries(cotos).map(([id, coto]) =>
-            `<option value="${id}">${coto.nombre}</option>`
+            `<option value="${id}">${escapeHTML(coto.nombre)}</option>`
         ).join('');
+    if (selected) select.value = selected;
 }
 
 function showZoneDrawMap() {
     document.getElementById('zone-draw-map').style.display = 'block';
-    setTimeout(() => initZonaMap(), 100);
+    setTimeout(() => {
+        initZonaMap();
+        if (zonaMap) zonaMap.invalidateSize();
+    }, 100);
 }
 
 function clearZonePolygon() {
-    zonaMarkers.forEach(m => m.setMap(null));
+    zonaMarkers.forEach(m => { if (zonaMap) zonaMap.removeLayer(m); });
     zonaMarkers = [];
     if (zonaPolygon) {
-        zonaPolygon.setMap(null);
+        if (zonaMap) zonaMap.removeLayer(zonaPolygon);
         zonaPolygon = null;
     }
 }
 
 async function guardarZona() {
     const id = editingZonaId || 'zona_' + Date.now();
+    const wasEditing = !!editingZonaId;
     const points = zonaMarkers.map(m => ({
-        lat: m.getPosition().lat(),
-        lng: m.getPosition().lng()
+        lat: m.getLatLng().lat,
+        lng: m.getLatLng().lng
     }));
 
     const zona = {
@@ -662,7 +702,7 @@ async function guardarZona() {
     await DataService.save('zonas', id, zona);
     hideZonaForm();
     loadZonasList();
-    showToast(editingZonaId ? 'Zona actualizada' : 'Zona creada');
+    showToast(wasEditing ? 'Zona actualizada' : 'Zona creada');
     updateDashboardStats();
 }
 
@@ -683,8 +723,8 @@ async function loadZonasList() {
                 <i class="fas fa-draw-polygon"></i>
             </div>
             <div class="item-info">
-                <h4>${zona.nombre}</h4>
-                <p>${cotos[zona.cotoId] ? cotos[zona.cotoId].nombre : 'Sin coto'} · ${zona.especies || ''} · ${zona.points ? zona.points.length + ' puntos' : ''}</p>
+                <h4>${escapeHTML(zona.nombre)}</h4>
+                <p>${escapeHTML(cotos[zona.cotoId] ? cotos[zona.cotoId].nombre : 'Sin coto')} · ${escapeHTML(zona.especies || '')} · ${zona.points ? zona.points.length + ' puntos' : ''}</p>
             </div>
             <div class="item-actions">
                 <button class="btn-icon" onclick="editZona('${id}')" title="Editar"><i class="fas fa-edit"></i></button>
@@ -717,14 +757,12 @@ async function deleteZona(id) {
 function showJornadaForm(jornada = null) {
     const container = document.getElementById('jornada-form-container');
     container.style.display = 'block';
-    populateJornadaSelects();
+    populateJornadaSelects(jornada ? jornada.cotoId : '', jornada ? jornada.zonaId : '');
 
     if (jornada) {
         editingJornadaId = jornada.id;
         document.getElementById('jornada-fecha').value = jornada.fecha || '';
-        document.getElementById('jornada-coto').value = jornada.cotoId || '';
         document.getElementById('jornada-tipo').value = jornada.tipo || 'monteria';
-        document.getElementById('jornada-zona').value = jornada.zonaId || '';
         document.getElementById('jornada-observaciones').value = jornada.observaciones || '';
     } else {
         editingJornadaId = null;
@@ -741,20 +779,22 @@ function hideJornadaForm() {
     editingJornadaId = null;
 }
 
-async function populateJornadaSelects() {
+async function populateJornadaSelects(selectedCotoId = '', selectedZonaId = '') {
     const cotos = await DataService.getAll('cotos');
     const cotoSelect = document.getElementById('jornada-coto');
     cotoSelect.innerHTML = '<option value="">Seleccionar coto...</option>' +
         Object.entries(cotos).map(([id, coto]) =>
-            `<option value="${id}">${coto.nombre}</option>`
+            `<option value="${id}">${escapeHTML(coto.nombre)}</option>`
         ).join('');
+    if (selectedCotoId) cotoSelect.value = selectedCotoId;
 
     const zonas = await DataService.getAll('zonas');
     const zonaSelect = document.getElementById('jornada-zona');
     zonaSelect.innerHTML = '<option value="">Sin zona específica</option>' +
         Object.entries(zonas).map(([id, zona]) =>
-            `<option value="${id}">${zona.nombre}</option>`
+            `<option value="${id}">${escapeHTML(zona.nombre)}</option>`
         ).join('');
+    if (selectedZonaId) zonaSelect.value = selectedZonaId;
 }
 
 function loadJornadaSpecies(selected = []) {
@@ -764,14 +804,20 @@ function loadJornadaSpecies(selected = []) {
     container.innerHTML = disponibles.map(sp => `
         <button type="button" class="species-toggle ${selected.includes(sp.id) ? 'selected' : ''}"
                 onclick="this.classList.toggle('selected')" data-id="${sp.id}">
-            <img src="${sp.imagen}" alt="${sp.nombre}" onerror="this.style.display='none'">
-            ${sp.nombre}
+            <img src="${escapeHTML(sp.imagen)}" alt="${escapeHTML(sp.nombre)}" onerror="this.style.display='none'">
+            ${escapeHTML(sp.nombre)}
         </button>
     `).join('');
 }
 
 async function guardarJornada() {
     const id = editingJornadaId || 'jornada_' + Date.now();
+    const wasEditing = !!editingJornadaId;
+    let createdAt = new Date().toISOString();
+    if (editingJornadaId) {
+        const existing = await DataService.get('jornadas', id);
+        if (existing && existing.createdAt) createdAt = existing.createdAt;
+    }
     const selectedSpecies = [];
     document.querySelectorAll('#jornada-species .species-toggle.selected').forEach(btn => {
         selectedSpecies.push(btn.dataset.id);
@@ -784,14 +830,14 @@ async function guardarJornada() {
         zonaId: document.getElementById('jornada-zona').value,
         especiesCazadas: selectedSpecies,
         observaciones: document.getElementById('jornada-observaciones').value,
-        createdAt: editingJornadaId ? undefined : new Date().toISOString(),
+        createdAt: createdAt,
         updatedAt: new Date().toISOString()
     };
 
     await DataService.save('jornadas', id, jornada);
     hideJornadaForm();
     loadJornadasList();
-    showToast(editingJornadaId ? 'Jornada actualizada' : 'Jornada registrada');
+    showToast(wasEditing ? 'Jornada actualizada' : 'Jornada registrada');
     updateDashboardStats();
 }
 
@@ -816,8 +862,8 @@ async function loadJornadasList() {
                     <i class="fas fa-book"></i>
                 </div>
                 <div class="item-info">
-                    <h4>${j.fecha || 'Sin fecha'} - ${j.tipo || ''}</h4>
-                    <p>${coto ? coto.nombre : 'Sin coto'} · ${spCount} especie(s) cazada(s)</p>
+                    <h4>${escapeHTML(j.fecha || 'Sin fecha')} - ${escapeHTML(j.tipo || '')}</h4>
+                    <p>${escapeHTML(coto ? coto.nombre : 'Sin coto')} · ${spCount} especie(s) cazada(s)</p>
                 </div>
                 <div class="item-actions">
                     <button class="btn-icon" onclick="editJornada('${id}')" title="Editar"><i class="fas fa-edit"></i></button>
@@ -945,6 +991,7 @@ async function saveDocument() {
         loadDocumentsList();
     }
     loadCazadorDocs();
+    loadArmasDocs();
 }
 
 async function loadCazadorDocs() {
@@ -962,11 +1009,36 @@ async function loadCazadorDocs() {
         const isPdf = doc.image && doc.image.startsWith('data:application/pdf');
         const thumb = isPdf
             ? '<div class="doc-thumb-empty" style="font-size:1.5rem;color:#ef4444"><i class="fas fa-file-pdf"></i></div>'
-            : `<img src="${doc.image}" alt="${doc.name}">`;
+            : `<img src="${escapeHTML(doc.image)}" alt="${escapeHTML(doc.name)}">`;
         return `
         <div class="doc-thumb" onclick="viewDoc('${id}')">
             ${thumb}
-            <div class="doc-thumb-label">${doc.name}</div>
+            <div class="doc-thumb-label">${escapeHTML(doc.name)}</div>
+        </div>`;
+    }).join('');
+}
+
+async function loadArmasDocs() {
+    const docs = await DataService.getAll('documentos');
+    const container = document.getElementById('armas-documentos');
+    if (!container) return;
+
+    const armaDocs = Object.entries(docs).filter(([id, d]) => d.type === 'arma');
+
+    if (armaDocs.length === 0) {
+        container.innerHTML = '<div class="doc-thumb"><div class="doc-thumb-empty"><i class="fas fa-file-image"></i><span>Sin docs</span></div></div>';
+        return;
+    }
+
+    container.innerHTML = armaDocs.map(([id, doc]) => {
+        const isPdf = doc.image && doc.image.startsWith('data:application/pdf');
+        const thumb = isPdf
+            ? '<div class="doc-thumb-empty" style="font-size:1.5rem;color:#ef4444"><i class="fas fa-file-pdf"></i></div>'
+            : `<img src="${escapeHTML(doc.image)}" alt="${escapeHTML(doc.name)}">`;
+        return `
+        <div class="doc-thumb" onclick="viewDoc('${id}')">
+            ${thumb}
+            <div class="doc-thumb-label">${escapeHTML(doc.name)}</div>
         </div>`;
     }).join('');
 }
@@ -986,13 +1058,13 @@ async function loadDocumentsList() {
         const isPdf = doc.image && doc.image.startsWith('data:application/pdf');
         const thumb = isPdf
             ? '<div class="doc-list-thumb"><i class="fas fa-file-pdf" style="font-size:1.5rem;color:#ef4444"></i></div>'
-            : `<div class="doc-list-thumb"><img src="${doc.image}" alt="${doc.name}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-file\\'></i>'"></div>`;
+            : `<div class="doc-list-thumb"><img src="${escapeHTML(doc.image)}" alt="${escapeHTML(doc.name)}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-file\\'></i>'"></div>`;
         return `
         <div class="doc-list-item" onclick="viewDoc('${id}')">
             ${thumb}
             <div class="doc-list-info">
-                <h4>${doc.name}</h4>
-                <p>${doc.category} · ${new Date(doc.createdAt).toLocaleDateString('es-ES')}</p>
+                <h4>${escapeHTML(doc.name)}</h4>
+                <p>${escapeHTML(doc.category)} · ${new Date(doc.createdAt).toLocaleDateString('es-ES')}</p>
             </div>
             <button class="btn-icon danger" onclick="event.stopPropagation();deleteDoc('${id}')" title="Eliminar">
                 <i class="fas fa-trash"></i>
@@ -1016,13 +1088,18 @@ async function viewDoc(id) {
     currentDocId = id;
     document.getElementById('doc-detail-title').textContent = doc.name;
     const img = document.getElementById('doc-detail-img');
+    const pdfFrame = document.getElementById('doc-detail-pdf');
     if (doc.image && doc.image.startsWith('data:application/pdf')) {
         img.src = '';
         img.alt = doc.name;
         img.style.display = 'none';
+        pdfFrame.src = doc.image;
+        pdfFrame.style.display = 'block';
     } else {
         img.src = doc.image;
         img.style.display = 'block';
+        pdfFrame.src = '';
+        pdfFrame.style.display = 'none';
     }
     document.getElementById('doc-detail-date').textContent = new Date(doc.createdAt).toLocaleDateString('es-ES');
     document.getElementById('doc-detail-modal').style.display = 'flex';
@@ -1039,6 +1116,7 @@ async function deleteCurrentDoc() {
         closeDocDetailModal();
         loadDocumentsList();
         loadCazadorDocs();
+        loadArmasDocs();
         showToast('Documento eliminado', 'info');
     }
 }
@@ -1048,6 +1126,7 @@ async function deleteDoc(id) {
         await DataService.remove('documentos', id);
         loadDocumentsList();
         loadCazadorDocs();
+        loadArmasDocs();
         showToast('Documento eliminado', 'info');
     }
 }
@@ -1096,11 +1175,11 @@ function renderSpecies(filter = 'todos') {
         <div class="species-card ${cazadas.includes(sp.id) ? 'cazada' : ''} ${isCustom ? 'custom-species-card' : ''}"
              onclick="showSpeciesDetail('${sp.id}')">
             ${delBtn}
-            <img class="species-img" src="${img}" alt="${sp.nombre}"
+            <img class="species-img" src="${escapeHTML(img)}" alt="${escapeHTML(sp.nombre)}"
                  onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 300%22%3E%3Crect fill=%22%23132e18%22 width=%22400%22 height=%22300%22/%3E%3Ctext fill=%22%236b9e70%22 font-family=%22sans-serif%22 font-size=%2220%22 text-anchor=%22middle%22 x=%22200%22 y=%22150%22%3E${encodeURIComponent(sp.nombre)}%3C/text%3E%3C/svg%3E'">
             <div class="species-info">
-                <h4>${sp.nombre}</h4>
-                <p>${sp.nombreCientifico}</p>
+                <h4>${escapeHTML(sp.nombre)}</h4>
+                <p>${escapeHTML(sp.nombreCientifico)}</p>
                 <span class="species-type-badge ${sp.tipo === 'mayor' ? 'badge-mayor' : 'badge-menor'}">
                     ${sp.tipo === 'mayor' ? 'Caza Mayor' : 'Caza Menor'}
                 </span>
@@ -1135,7 +1214,7 @@ function showSpeciesDetail(id) {
     document.getElementById('species-detail-info').innerHTML = `
         <div class="info-item">
             <label>Científico</label>
-            <span>${sp.nombreCientifico}</span>
+            <span>${escapeHTML(sp.nombreCientifico)}</span>
         </div>
         <div class="info-item">
             <label>Tipo</label>
@@ -1143,19 +1222,19 @@ function showSpeciesDetail(id) {
         </div>
         <div class="info-item">
             <label>Grupo</label>
-            <span>${sp.grupo || '-'}</span>
+            <span>${escapeHTML(sp.grupo || '-')}</span>
         </div>
         <div class="info-item">
             <label>Temporada</label>
-            <span>${sp.temporada}</span>
+            <span>${escapeHTML(sp.temporada)}</span>
         </div>
         <div class="info-item" style="grid-column: 1/-1">
             <label>Descripción</label>
-            <span>${sp.descripcion}</span>
+            <span>${escapeHTML(sp.descripcion)}</span>
         </div>
         <div class="info-item" style="grid-column: 1/-1">
             <label>Regulación</label>
-            <span>${sp.regulateInfo}</span>
+            <span>${escapeHTML(sp.regulateInfo)}</span>
         </div>
     `;
 
@@ -1478,6 +1557,12 @@ async function saveDog() {
     if (!nombre) { showToast('Introduce un nombre', 'error'); return; }
 
     const id = editingDogId || 'dog_' + Date.now();
+    const wasEditing = !!editingDogId;
+    let createdAt = new Date().toISOString();
+    if (editingDogId) {
+        const existing = await DataService.get('perros', id);
+        if (existing && existing.createdAt) createdAt = existing.createdAt;
+    }
     const dog = {
         nombre: nombre,
         raza: document.getElementById('dog-raza').value.trim(),
@@ -1486,14 +1571,14 @@ async function saveDog() {
         microchip: document.getElementById('dog-microchip').value.trim(),
         notas: document.getElementById('dog-notas').value.trim(),
         foto: dogPhotoData || null,
-        createdAt: editingDogId ? undefined : new Date().toISOString(),
+        createdAt: createdAt,
         updatedAt: new Date().toISOString()
     };
 
     await DataService.save('perros', id, dog);
     closeDogForm();
     loadDogsList();
-    showToast(editingDogId ? 'Perro actualizado' : 'Perro registrado');
+    showToast(wasEditing ? 'Perro actualizado' : 'Perro registrado');
 }
 
 async function loadDogsList() {
@@ -1507,14 +1592,14 @@ async function loadDogsList() {
 
     container.innerHTML = Object.entries(perros).map(([id, dog]) => {
         const fotoHtml = dog.foto
-            ? '<img class="dog-thumb" src="' + dog.foto + '" alt="' + dog.nombre + '">'
+            ? '<img class="dog-thumb" src="' + escapeHTML(dog.foto) + '" alt="' + escapeHTML(dog.nombre) + '">'
             : '<div class="item-icon green"><i class="fas fa-dog"></i></div>';
         return `
         <div class="item-card">
             ${fotoHtml}
             <div class="item-info">
-                <h4>${dog.nombre}</h4>
-                <p>${dog.raza || 'Sin raza'} · ${dog.sexo === 'macho' ? '♂ Macho' : '♀ Hembra'}${dog.microchip ? ' · Chip: ' + dog.microchip : ''}</p>
+                <h4>${escapeHTML(dog.nombre)}</h4>
+                <p>${escapeHTML(dog.raza || 'Sin raza')} · ${dog.sexo === 'macho' ? '♂ Macho' : '♀ Hembra'}${dog.microchip ? ' · Chip: ' + escapeHTML(dog.microchip) : ''}</p>
             </div>
             <div class="item-actions">
                 <button class="btn-icon" onclick="editDog('${id}')" title="Editar"><i class="fas fa-edit"></i></button>
@@ -1545,19 +1630,37 @@ async function deleteDog(id) {
 // ============================================
 function initGoogleMaps() {}
 
-const cotoIcon = L.divIcon({
-    className: '',
-    html: '<div style="width:28px;height:28px;background:#22c55e;border:2px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,.3)"><span style="color:#fff;font-size:14px">⛰</span></div>',
-    iconSize: [28, 28],
-    iconAnchor: [14, 14]
-});
+let cotoIcon = null;
+let zonaCenterIcon = null;
+let cotoPinIcon = null;
 
-const zonaCenterIcon = L.divIcon({
-    className: '',
-    html: '<div style="width:24px;height:24px;background:#3b82f6;border:2px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,.3)"><span style="color:#fff;font-size:10px">📍</span></div>',
-    iconSize: [24, 24],
-    iconAnchor: [12, 12]
-});
+function initMapIcons() {
+    if (cotoIcon || typeof L === 'undefined') return;
+    cotoIcon = L.divIcon({
+        className: '',
+        html: '<div style="width:28px;height:28px;background:#22c55e;border:2px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,.3)"><span style="color:#fff;font-size:14px">⛰</span></div>',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
+    });
+    zonaCenterIcon = L.divIcon({
+        className: '',
+        html: '<div style="width:24px;height:24px;background:#3b82f6;border:2px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,.3)"><span style="color:#fff;font-size:10px">📍</span></div>',
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+    });
+    cotoPinIcon = L.divIcon({
+        className: '',
+        html: '<div style="width:32px;height:32px;background:#22c55e;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,.3)"></div>',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
+    });
+}
+
+function mapAvailable() {
+    if (typeof L !== 'undefined') return true;
+    showToast('Mapa no disponible: no se pudo cargar la librería de mapas', 'error');
+    return false;
+}
 
 function createTileLayer() {
     return L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -1569,6 +1672,8 @@ function createTileLayer() {
 function initGeneralMap() {
     const mapEl = document.getElementById('map-general');
     if (!mapEl) return;
+    if (!mapAvailable()) return;
+    initMapIcons();
 
     if (!generalMap) {
         generalMap = L.map(mapEl, { zoomControl: true }).setView([40.0, -3.7], 6);
@@ -1582,10 +1687,12 @@ function initGeneralMap() {
 async function loadMapMarkers() {
     if (!generalMap) return;
 
-    allMarkers.forEach(m => generalMap.removeLayer(m));
-    allPolygons.forEach(p => generalMap.removeLayer(p));
-    allMarkers = [];
-    allPolygons = [];
+    cotoMarkers.forEach(m => generalMap.removeLayer(m));
+    zonaPolygonLayers.forEach(p => generalMap.removeLayer(p));
+    zonaCenterMarkers.forEach(m => generalMap.removeLayer(m));
+    cotoMarkers = [];
+    zonaPolygonLayers = [];
+    zonaCenterMarkers = [];
 
     const cotos = await DataService.getAll('cotos');
     const zonas = await DataService.getAll('zonas');
@@ -1593,8 +1700,8 @@ async function loadMapMarkers() {
     Object.entries(cotos).forEach(([id, coto]) => {
         if (coto.lat && coto.lng) {
             const marker = L.marker([coto.lat, coto.lng], { icon: cotoIcon }).addTo(generalMap);
-            marker.bindPopup('<strong>' + coto.nombre + '</strong><br><small>' + (coto.ubicacion || '') + '</small><br><small>' + (coto.superficie ? coto.superficie + ' ha' : '') + '</small>');
-            allMarkers.push(marker);
+            marker.bindPopup('<strong>' + escapeHTML(coto.nombre) + '</strong><br><small>' + escapeHTML(coto.ubicacion || '') + '</small><br><small>' + (coto.superficie ? escapeHTML(coto.superficie) + ' ha' : '') + '</small>');
+            cotoMarkers.push(marker);
         }
     });
 
@@ -1602,13 +1709,13 @@ async function loadMapMarkers() {
         if (zona.points && zona.points.length >= 3) {
             const latlngs = zona.points.map(p => [p.lat || p[0], p.lng || p[1]]);
             const polygon = L.polygon(latlngs, { color: '#ef4444', weight: 2, fillColor: '#ef4444', fillOpacity: 0.15 }).addTo(generalMap);
-            polygon.bindPopup('<strong>' + zona.nombre + '</strong><br><small>' + (zona.especies || '') + '</small>');
-            allPolygons.push(polygon);
+            polygon.bindPopup('<strong>' + escapeHTML(zona.nombre) + '</strong><br><small>' + escapeHTML(zona.especies || '') + '</small>');
+            zonaPolygonLayers.push(polygon);
         }
         if (zona.center) {
             const marker = L.marker([zona.center.lat, zona.center.lng], { icon: zonaCenterIcon }).addTo(generalMap);
-            marker.bindPopup('<strong>' + zona.nombre + '</strong>');
-            allMarkers.push(marker);
+            marker.bindPopup('<strong>' + escapeHTML(zona.nombre) + '</strong>');
+            zonaCenterMarkers.push(marker);
         }
     });
 }
@@ -1616,27 +1723,30 @@ async function loadMapMarkers() {
 function initCotoMap() {
     const mapEl = document.getElementById('map-coto');
     if (!mapEl || cotoMap) return;
+    if (!mapAvailable()) return;
+    initMapIcons();
 
     cotoMap = L.map(mapEl, { zoomControl: true }).setView([40.0, -3.7], 8);
     createTileLayer().addTo(cotoMap);
     setTimeout(() => cotoMap.invalidateSize(), 200);
 
+    if (pendingCotoLatLng) {
+        cotoMarker = L.marker([pendingCotoLatLng.lat, pendingCotoLatLng.lng], { icon: cotoPinIcon }).addTo(cotoMap);
+        cotoMap.setView([pendingCotoLatLng.lat, pendingCotoLatLng.lng], 12);
+    }
+
     cotoMap.on('click', function(e) {
         if (cotoMarker) cotoMap.removeLayer(cotoMarker);
-        cotoMarker = L.marker(e.latlng, {
-            icon: L.divIcon({
-                className: '',
-                html: '<div style="width:32px;height:32px;background:#22c55e;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,.3)"></div>',
-                iconSize: [32, 32],
-                iconAnchor: [16, 16]
-            })
-        }).addTo(cotoMap);
+        cotoMarker = L.marker(e.latlng, { icon: cotoPinIcon }).addTo(cotoMap);
+        pendingCotoLatLng = null;
     });
 }
 
 function initZonaMap() {
     const mapEl = document.getElementById('map-zona');
     if (!mapEl || zonaMap) return;
+    if (!mapAvailable()) return;
+    initMapIcons();
 
     zonaMap = L.map(mapEl, { zoomControl: true }).setView([40.0, -3.7], 10);
     createTileLayer().addTo(zonaMap);
@@ -1673,6 +1783,27 @@ function updateZonaPolygon() {
 
 function getMapStyle() { return []; }
 
+function showAllMapLayers() {
+    if (!generalMap) return;
+    cotoMarkers.forEach(m => m.addTo(generalMap));
+    zonaPolygonLayers.forEach(p => p.addTo(generalMap));
+    zonaCenterMarkers.forEach(m => m.addTo(generalMap));
+}
+
+function showCotosMapLayers() {
+    if (!generalMap) return;
+    zonaPolygonLayers.forEach(p => generalMap.removeLayer(p));
+    zonaCenterMarkers.forEach(m => generalMap.removeLayer(m));
+    cotoMarkers.forEach(m => m.addTo(generalMap));
+}
+
+function showZonasMapLayers() {
+    if (!generalMap) return;
+    cotoMarkers.forEach(m => generalMap.removeLayer(m));
+    zonaPolygonLayers.forEach(p => p.addTo(generalMap));
+    zonaCenterMarkers.forEach(m => m.addTo(generalMap));
+}
+
 function verTodosCotos() {
     document.querySelectorAll('.map-controls .btn-sm').forEach(b => b.classList.remove('active'));
     document.getElementById('btn-ver-todos').classList.add('active');
@@ -1682,13 +1813,15 @@ function verTodosCotos() {
 function verCotosEnMapa() {
     document.querySelectorAll('.map-controls .btn-sm').forEach(b => b.classList.remove('active'));
     document.getElementById('btn-ver-cotos').classList.add('active');
-    allPolygons.forEach(p => generalMap.removeLayer(p));
+    if (!generalMap) return;
+    showCotosMapLayers();
 }
 
 function verZonasEnMapa() {
     document.querySelectorAll('.map-controls .btn-sm').forEach(b => b.classList.remove('active'));
     document.getElementById('btn-ver-zonas').classList.add('active');
-    allMarkers.forEach(m => generalMap.removeLayer(m));
+    if (!generalMap) return;
+    showZonasMapLayers();
 }
 
 // ============================================
@@ -1736,8 +1869,8 @@ async function loadRecentActivity(jornadas, cotos) {
             <div class="activity-item">
                 <div class="activity-icon blue"><i class="fas fa-book"></i></div>
                 <div class="activity-info">
-                    <strong>Jornada de ${j.tipo || 'caza'}</strong>
-                    <p>${j.fecha || ''} · ${coto ? coto.nombre : ''} · ${spCount} captura(s)</p>
+                    <strong>Jornada de ${escapeHTML(j.tipo || 'caza')}</strong>
+                    <p>${escapeHTML(j.fecha || '')} · ${escapeHTML(coto ? coto.nombre : '')} · ${spCount} captura(s)</p>
                 </div>
             </div>
         `;
@@ -1796,11 +1929,18 @@ async function initApp() {
     await renderSpecies();
     await updateDashboardStats();
     await loadCazadorDocs();
+    await loadArmasDocs();
 
     setupImportListener();
     initGoogleMaps();
     console.log('Cazatec initialized');
 }
+
+window.addEventListener('unhandledrejection', function(event) {
+    const reason = event.reason;
+    const msg = reason && reason.message ? reason.message : 'Error inesperado';
+    showToast(msg, 'error');
+});
 
 // Start app when DOM is ready
 document.addEventListener('DOMContentLoaded', initApp);
