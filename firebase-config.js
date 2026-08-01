@@ -26,10 +26,15 @@ const LocalDB = {
     },
     importAll(jsonStr) {
         const data = JSON.parse(jsonStr);
-        Object.keys(data).forEach(key => {
-            if (key.startsWith('cazatec_')) {
-                localStorage.setItem(key, data[key]);
+        const importedKeys = Object.keys(data).filter(key => key.startsWith('cazatec_'));
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith('cazatec_') && !importedKeys.includes(key)) {
+                localStorage.removeItem(key);
             }
+        }
+        importedKeys.forEach(key => {
+            localStorage.setItem(key, data[key]);
         });
     }
 };
@@ -40,7 +45,9 @@ const DataService = {
     async save(collection, id, data) {
         const all = LocalDB.get(collection) || {};
         all[id] = data;
-        LocalDB.set(collection, all);
+        if (!LocalDB.set(collection, all)) {
+            throw new Error('Almacenamiento lleno. Elimina fotos o documentos antiguos para liberar espacio.');
+        }
         return true;
     },
 
