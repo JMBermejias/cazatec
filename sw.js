@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cazatec-v13';
+const CACHE_NAME = 'cazatec-v14';
 const BASE = new URL('.', self.location.href).pathname;
 const ASSETS = [
     BASE + 'index.html',
