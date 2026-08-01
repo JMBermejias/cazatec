@@ -1,10 +1,10 @@
-const CACHE_NAME = 'cazatec-v13';
+const CACHE_NAME = 'cazatec-v14';
 const BASE = new URL('.', self.location.href).pathname;
 const ASSETS = [
     BASE + 'index.html',
     BASE + 'styles.css',
     BASE + 'app.js',
-    BASE + 'firebase-config.js',
+    BASE + 'db.js',
     BASE + 'manifest.json',
     BASE + 'icon-192.png',
     BASE + 'icon-512.png',
