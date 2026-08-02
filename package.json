@@ -1,0 +1,63 @@
+{
+  "name": "cazatec",
+  "version": "1.0.0",
+  "description": "Cazatec - Gestión de cotos, zonas y jornadas de caza",
+  "main": "main.js",
+  "author": "JMBernabeu",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win",
+    "apk": "cap sync android && cd android && gradlew.bat assembleDebug"
+  },
+  "build": {
+    "appId": "com.jmbermejias.cazatec",
+    "productName": "Cazatec",
+    "files": [
+      "index.html",
+      "app.js",
+      "db.js",
+      "styles.css",
+      "sw.js",
+      "manifest.json",
+      "icon-192.png",
+      "icon-512.png",
+      "icon.svg",
+      "main.js",
+      "vendor/**/*",
+      "!android/**/*",
+      "!dist/**/*"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Cazatec"
+    }
+  },
+  "devDependencies": {
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.3",
+    "png-to-ico": "^3.0.2"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/core": "^8.5.0"
+  }
+}

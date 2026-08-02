@@ -5,5 +5,7 @@ node_modules/
 Thumbs.db
 dist/
 android/
+www/
+release/
 *.apk
 *.exe
