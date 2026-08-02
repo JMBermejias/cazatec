@@ -1944,7 +1944,7 @@ function updateSyncUI() {
 }
 
 async function syncCreateCode() {
-    const code = SyncService.createCode();
+    const code = await SyncService.createCode();
     updateSyncUI();
     showToast('Código creado: ' + code);
     const ok = await SyncService.syncNow();

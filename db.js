@@ -5,8 +5,9 @@
 // ============================================
 // CONFIGURACIÓN SUPABASE
 // 1) Crea un proyecto gratuito en https://supabase.com
-// 2) SQL Editor: ejecuta el SQL de "sync_data" (abajo en AGENTS.md o README)
-// 3) Settings > API: copia la URL y la anon key y pégalas aquí.
+// 2) SQL Editor: ejecuta el SQL de "sync_data" y "sync_devices" (AGENTS.md)
+// 3) Authentication > Sign In / Providers > habilita "Anonymous sign-ins"
+// 4) Settings > API: copia la URL y la anon key y pégalas aquí.
 // ============================================
 const SUPABASE_URL = 'https://swkmxrmaiocofxetbvoh.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_Vc1ebNkqbUq8-AJ55oWkLg_ZS0ult4V';
@@ -115,10 +116,10 @@ const DataService = {
 // ============================================
 // SINCRONIZACIÓN (Supabase)
 // Cada dispositivo guarda en localStorage (funciona offline) y además
-// sincroniza con una fila de la tabla "sync_data" de Supabase.
-// La clave de esa fila es un "código de sincronización" compartido entre
-// tus dispositivos. Los cambios se envían automáticamente y también se
-// recogen los cambios hechos en otros dispositivos.
+// sincroniza con la fila "sync_data" de Supabase cuya id es el código.
+// Cada dispositivo inicia sesión anónimamente (auth.uid()) y se registra
+// en "sync_devices" con su código, lo que permite que RLS solo deje
+// acceder a la fila a los dispositivos que conocen el código.
 // ============================================
 const SyncService = {
     _client: null,
@@ -127,7 +128,7 @@ const SyncService = {
     _syncing: false,
     _interval: null,
 
-    init() {
+    async init() {
         this._registerHook();
         if (!this.configure()) return;
         if (typeof document !== 'undefined') {
@@ -139,6 +140,7 @@ const SyncService = {
         window.addEventListener('online', () => {
             if (this._loadMeta().pending) this.syncNow();
         });
+        await this._signIn();
         if (this.isConnected()) {
             this._startAutoSync();
             this.syncNow();
@@ -155,6 +157,38 @@ const SyncService = {
         try {
             this._client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             return true;
+        } catch (e) {
+            return false;
+        }
+    },
+
+    async _signIn() {
+        if (!this._client) return false;
+        try {
+            const { data, error } = await this._client.auth.getSession();
+            if (error) throw error;
+            if (!data || !data.session) {
+                const res = await this._client.auth.signInAnonymously();
+                if (res.error) throw res.error;
+            }
+            return true;
+        } catch (e) {
+            return false;
+        }
+    },
+
+    async _registerDevice(code) {
+        if (!this._client) return false;
+        try {
+            const { data } = await this._client.auth.getSession();
+            const uid = data && data.session ? data.session.user.id : null;
+            if (!uid) return false;
+            const now = new Date().toISOString();
+            const { error } = await this._client.from('sync_devices').upsert(
+                { device_id: uid, code: String(code).trim().toUpperCase(), updated_at: now },
+                { onConflict: 'device_id' }
+            );
+            return !error;
         } catch (e) {
             return false;
         }
@@ -203,7 +237,7 @@ const SyncService = {
         }
     },
 
-    createCode() {
+    async createCode() {
         const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
         let code = '';
         for (let i = 0; i < 12; i++) {
@@ -213,6 +247,8 @@ const SyncService = {
         meta.code = code;
         meta.pending = true;
         this._saveMeta();
+        await this._signIn();
+        await this._registerDevice(code);
         return code;
     },
 
@@ -223,6 +259,8 @@ const SyncService = {
         meta.pending = true;
         this._saveMeta();
         this._startAutoSync();
+        await this._signIn();
+        await this._registerDevice(meta.code);
         return await this.syncNow();
     },
 
@@ -241,6 +279,7 @@ const SyncService = {
         let ok = false;
         let pulled = false;
         try {
+            await this._signIn();
             const meta = this._loadMeta();
             let res;
             if (meta.pending) {
