@@ -53,6 +53,15 @@ create policy "device update" on sync_devices for update
 - Merge por colección con huellas (`meta.fp`); si dos dispositivos editan la misma colección a la vez, gana el último que sube (last-write-wins).
 - `updated_at` de la fila solo informativo; la lógica usa las huellas, no relojes.
 
+### Avisos del Security Advisor (esperados, no son fallos)
+
+Con los anónimos activados, el Security Advisor de Supabase muestra avisos que **no hay que "arreglar"**:
+
+- **"Anonymous Sign-Ins Allowed"** en `sync_data` y `sync_devices` (lint `0012`): aparece solo porque los anónimos usan el rol `authenticated` y hay tablas con RLS. En esta app el anónimo **es el usuario por diseño** (cada dispositivo se autentica en anónimo). El acceso sigue limitado por fila: un dispositivo sin el código recibe `[]`. NO añadir cláusulas `is_anonymous = 'false'` porque romperían la sincronización.
+- **"Leaked password protection"**: recomendación general de Auth para cuentas email/contraseña; la app no usa contraseñas. Se puede ignorar o activar en Authentication > Settings (no afecta).
+
+Las alertas críticas de "RLS Policy Always True" NO deben aparecer: si reaparecen, algo va mal con el SQL de arriba.
+
 ## Flujo de trabajo obligatorio
 
 - **Siempre** mantener sincronizados local, git y el despliegue.
