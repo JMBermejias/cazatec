@@ -1466,3 +1466,36 @@ body {
         grid-template-columns: repeat(5, 1fr);
     }
 }
+
+/* ============================================
+   SINCRONIZACIÓN
+   ============================================ */
+.sync-status {
+    font-size: 0.85rem;
+    color: var(--text-secondary, #666);
+    background: rgba(67, 160, 71, 0.08);
+    border: 1px solid rgba(67, 160, 71, 0.25);
+    border-radius: var(--radius-sm, 8px);
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+.sync-code-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: var(--bg-input, #f5f5f5);
+    border: 1px dashed var(--green-600, #43a047);
+    border-radius: var(--radius-sm, 8px);
+    padding: 12px;
+    font-size: 0.95rem;
+    flex-wrap: wrap;
+}
+
+.sync-code-box strong {
+    font-size: 1.05rem;
+    letter-spacing: 1px;
+    color: var(--green-600, #43a047);
+}
