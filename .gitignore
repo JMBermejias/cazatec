@@ -9,3 +9,10 @@ www/
 release/
 *.apk
 *.exe
+!cazatecwindows/
+!cazatecandroid/
+!cazatecwindows/*.exe
+!cazatecwindows/*.blockmap
+!cazatecwindows/*.yml
+!cazatecandroid/*.apk
+!cazatecandroid/*.aab
