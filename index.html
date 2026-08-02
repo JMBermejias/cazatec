@@ -15,7 +15,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="icon" type="image/svg+xml" href="icon.svg">
-    <link rel="stylesheet" href="styles.css?v=12">
+    <link rel="stylesheet" href="styles.css?v=13">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -103,11 +103,47 @@
                 </div>
 
                 <div class="section-card">
-                    <h3><i class="fas fa-sync-alt"></i> Datos</h3>
-                    <button class="btn-secondary btn-full" onclick="exportData()" style="margin-bottom:8px">
+                    <h3><i class="fas fa-sync-alt"></i> Datos y Sincronización</h3>
+
+                    <div id="sync-panel">
+                        <p class="sync-status" id="sync-status">Comprobando sincronización...</p>
+
+                        <div id="sync-connect" style="display:none">
+                            <div class="form-group">
+                                <label>Código de sincronización</label>
+                                <input type="text" id="sync-code-input" placeholder="Pega aquí el código" autocomplete="off">
+                            </div>
+                            <button class="btn-primary btn-full" onclick="syncConnect()">
+                                <i class="fas fa-link"></i> Conectar
+                            </button>
+                            <button class="btn-secondary btn-full" onclick="syncCreateCode()" style="margin-top:8px">
+                                <i class="fas fa-plus"></i> Soy el primer dispositivo (crear código)
+                            </button>
+                        </div>
+
+                        <div id="sync-connected" style="display:none">
+                            <div class="sync-code-box">
+                                <span>Código:</span>
+                                <strong id="sync-code-display"></strong>
+                            </div>
+                            <div class="btn-group" style="margin-top:8px">
+                                <button class="btn-secondary" onclick="syncCopyCode()">
+                                    <i class="fas fa-copy"></i> Copiar
+                                </button>
+                                <button class="btn-primary" onclick="syncNow()">
+                                    <i class="fas fa-sync-alt"></i> Sincronizar
+                                </button>
+                            </div>
+                            <button class="btn-danger btn-full" onclick="syncDisconnect()" style="margin-top:8px">
+                                <i class="fas fa-unlink"></i> Desconectar
+                            </button>
+                        </div>
+                    </div>
+
+                    <button class="btn-secondary btn-full" onclick="exportData()" style="margin-top:10px">
                         <i class="fas fa-download"></i> Exportar Datos
                     </button>
-                    <button class="btn-secondary btn-full" onclick="importData()">
+                    <button class="btn-secondary btn-full" onclick="importData()" style="margin-top:8px">
                         <i class="fas fa-upload"></i> Importar Datos
                     </button>
                     <input type="file" id="import-file-input" accept=".json" style="display:none">
@@ -869,10 +905,11 @@
     <!-- Leaflet CSS/JS (local, funciona offline) -->
     <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
     <script src="vendor/leaflet/leaflet.js"></script>
-    <script src="db.js?v=12"></script>
-    <script src="app.js?v=12"></script>
+    <script src="vendor/supabase/supabase.min.js"></script>
+    <script src="db.js?v=13"></script>
+    <script src="app.js?v=13"></script>
     <script>
-        var SW_VERSION = 'v13';
+        var SW_VERSION = 'v14';
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js?' + SW_VERSION).then(function(reg) {
                 console.log('SW registered');

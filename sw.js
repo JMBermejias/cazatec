@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cazatec-v13';
+const CACHE_NAME = 'cazatec-v14';
 const BASE = new URL('.', self.location.href).pathname;
 const ASSETS = [
     BASE + 'index.html',
@@ -14,7 +14,8 @@ const ASSETS = [
     BASE + 'vendor/leaflet/images/layers-2x.png',
     BASE + 'vendor/leaflet/images/marker-icon.png',
     BASE + 'vendor/leaflet/images/marker-icon-2x.png',
-    BASE + 'vendor/leaflet/images/marker-shadow.png'
+    BASE + 'vendor/leaflet/images/marker-shadow.png',
+    BASE + 'vendor/supabase/supabase.min.js'
 ];
 
 self.addEventListener('install', (event) => {

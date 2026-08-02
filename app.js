@@ -1918,10 +1918,112 @@ function setupImportListener() {
 }
 
 // ============================================
+// SYNCHRONIZATION UI
+// ============================================
+function updateSyncUI() {
+    const status = document.getElementById('sync-status');
+    const connectBox = document.getElementById('sync-connect');
+    const connectedBox = document.getElementById('sync-connected');
+    if (!status || !connectBox || !connectedBox) return;
+
+    if (SyncService.isConnected()) {
+        status.textContent = 'Conectado. Los datos se sincronizan automáticamente entre tus dispositivos.';
+        const display = document.getElementById('sync-code-display');
+        if (display) display.textContent = SyncService.getCode();
+        connectBox.style.display = 'none';
+        connectedBox.style.display = 'block';
+    } else if (SyncService.isConfigured()) {
+        status.textContent = 'No conectado. Introduce el código de otro dispositivo o crea uno nuevo.';
+        connectBox.style.display = 'block';
+        connectedBox.style.display = 'none';
+    } else {
+        status.textContent = 'Sincronización no configurada. Falta SUPABASE_URL / anon key en db.js.';
+        connectBox.style.display = 'none';
+        connectedBox.style.display = 'none';
+    }
+}
+
+async function syncCreateCode() {
+    const code = SyncService.createCode();
+    updateSyncUI();
+    showToast('Código creado: ' + code);
+    const ok = await SyncService.syncNow();
+    showToast(ok ? 'Datos iniciales sincronizados' : 'Sincronización pendiente (sin conexión)', ok ? 'success' : 'info');
+}
+
+async function syncConnect() {
+    const input = document.getElementById('sync-code-input');
+    const code = (input.value || '').trim().toUpperCase();
+    if (!code) {
+        showToast('Introduce el código de sincronización', 'error');
+        return;
+    }
+    const ok = await SyncService.connect(code);
+    updateSyncUI();
+    showToast(ok ? 'Conectado y datos sincronizados' : 'No se pudo sincronizar. Revisa el código y tu conexión.', ok ? 'success' : 'error');
+}
+
+function syncCopyCode() {
+    const code = SyncService.getCode();
+    if (!code) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(() => showToast('Código copiado')).catch(() => showToast('No se pudo copiar', 'error'));
+    } else {
+        showToast('Código: ' + code);
+    }
+}
+
+async function syncNow() {
+    const ok = await SyncService.syncNow();
+    if (ok) showToast('Datos sincronizados');
+}
+
+function syncDisconnect() {
+    SyncService.disconnect();
+    updateSyncUI();
+    showToast('Sincronización desconectada');
+}
+
+function refreshAfterSync() {
+    updateSyncUI();
+    updateDashboardStats();
+    if (currentPage === 'page-documentos') {
+        loadDocumentsList();
+    } else if (currentPage === 'page-jornadas') {
+        loadJornadasList();
+        populateJornadaSelects();
+    } else if (currentPage === 'page-cazador') {
+        loadCazador();
+        loadCazadorDocs();
+        loadDogsList();
+    } else if (currentPage === 'page-armas') {
+        loadArmasList();
+        loadArmasDocs();
+    } else if (currentPage === 'page-cotos') {
+        loadCotosList();
+    } else if (currentPage === 'page-zonas') {
+        loadZonasList();
+    } else if (currentPage === 'page-especies') {
+        renderSpecies(currentSpeciesFilter);
+    } else if (currentPage === 'page-mapa') {
+        loadMapMarkers();
+    }
+}
+
+window.addEventListener('cazatec-sync', function(event) {
+    if (event.detail && event.detail.pulled) {
+        refreshAfterSync();
+    } else {
+        updateSyncUI();
+    }
+});
+
+// ============================================
 // INITIALIZATION
 // ============================================
 async function initApp() {
     await DataService.init();
+    updateSyncUI();
     await loadCazador();
     await loadCotosList();
     await loadArmasList();
