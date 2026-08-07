@@ -283,6 +283,50 @@ function escapeHTML(str) {
 }
 
 // ============================================
+// IMAGE COMPRESSION
+// ============================================
+function processImageFile(file, maxDim, quality, callback) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const dataUrl = e.target.result;
+        if (file.type === 'application/pdf') {
+            callback(dataUrl);
+            return;
+        }
+        const img = new Image();
+        img.onload = function() {
+            let w = img.width;
+            let h = img.height;
+            if (w > maxDim || h > maxDim) {
+                if (w > h) {
+                    h = Math.round(h * maxDim / w);
+                    w = maxDim;
+                } else {
+                    w = Math.round(w * maxDim / h);
+                    h = maxDim;
+                }
+            }
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, w, h);
+                ctx.drawImage(img, 0, 0, w, h);
+                const out = canvas.toDataURL('image/jpeg', quality);
+                callback(out.length < dataUrl.length ? out : dataUrl);
+            } catch (err) {
+                callback(dataUrl);
+            }
+        };
+        img.onerror = function() { callback(dataUrl); };
+        img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+}
+
+// ============================================
 // TOAST NOTIFICATIONS
 // ============================================
 function showToast(message, type = 'success') {
@@ -366,17 +410,18 @@ function triggerCazadorGallery() {
 
 async function handleCazadorPhoto(file) {
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async function(e) {
-        const fotoData = e.target.result;
+    processImageFile(file, 1200, 0.75, async function(fotoData) {
         document.getElementById('cazador-foto').innerHTML = '<img src="' + fotoData + '" alt="Foto">';
         const existing = await DataService.get('cazador', 'perfil') || {};
         existing.foto = fotoData;
         existing.updatedAt = new Date().toISOString();
-        await DataService.save('cazador', 'perfil', existing);
-        showToast('Foto del perfil actualizada');
-    };
-    reader.readAsDataURL(file);
+        try {
+            await DataService.save('cazador', 'perfil', existing);
+            showToast('Foto del perfil actualizada');
+        } catch (e) {
+            showToast(e.message || 'No se pudo guardar la foto', 'error');
+        }
+    });
 }
 
 // ============================================
@@ -940,9 +985,8 @@ function handleFileSelect(file) {
     if (!file) return;
 
     const isPdf = file.type === 'application/pdf';
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        photoData = e.target.result;
+    processImageFile(file, 1600, 0.7, function(data) {
+        photoData = data;
         const previewImg = document.getElementById('photo-preview');
         const previewPdf = document.getElementById('pdf-preview');
         const previewPdfName = document.getElementById('pdf-preview-name');
@@ -958,8 +1002,7 @@ function handleFileSelect(file) {
         }
         document.getElementById('photo-preview-container').style.display = 'block';
         document.getElementById('btn-save-doc').disabled = false;
-    };
-    reader.readAsDataURL(file);
+    });
 }
 
 async function takePhoto(type) {
@@ -982,7 +1025,12 @@ async function saveDocument() {
     };
 
     const id = 'doc_' + Date.now();
-    await DataService.save('documentos', id, doc);
+    try {
+        await DataService.save('documentos', id, doc);
+    } catch (e) {
+        showToast(e.message || 'No se pudo guardar el documento', 'error');
+        return;
+    }
 
     closePhotoModal();
     showToast('Documento guardado');
@@ -1317,15 +1365,12 @@ function triggerSpeciesGallery() {
 
 function handleSpeciesFileSelect(file) {
     if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        speciesPhotoData = e.target.result;
+    processImageFile(file, 1200, 0.75, function(data) {
+        speciesPhotoData = data;
         document.getElementById('species-photo-preview').src = speciesPhotoData;
         document.getElementById('species-photo-preview-container').style.display = 'block';
         document.getElementById('btn-save-species-photo').disabled = false;
-    };
-    reader.readAsDataURL(file);
+    });
 }
 
 function saveSpeciesPhoto() {
@@ -1333,7 +1378,10 @@ function saveSpeciesPhoto() {
 
     const customPhotos = LocalDB.get('species_custom_photos') || {};
     customPhotos[currentSpeciesId] = speciesPhotoData;
-    LocalDB.set('species_custom_photos', customPhotos);
+    if (!LocalDB.set('species_custom_photos', customPhotos)) {
+        showToast('No hay espacio para guardar la foto', 'error');
+        return;
+    }
 
     document.getElementById('species-detail-img').src = speciesPhotoData;
     closeSpeciesPhotoModal();
@@ -1544,12 +1592,10 @@ function triggerDogGallery() {
 
 function handleDogFileSelect(file) {
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        dogPhotoData = e.target.result;
+    processImageFile(file, 1200, 0.75, function(data) {
+        dogPhotoData = data;
         document.getElementById('dog-foto-preview').innerHTML = '<img src="' + dogPhotoData + '" alt="Foto">';
-    };
-    reader.readAsDataURL(file);
+    });
 }
 
 async function saveDog() {
@@ -1575,7 +1621,12 @@ async function saveDog() {
         updatedAt: new Date().toISOString()
     };
 
-    await DataService.save('perros', id, dog);
+    try {
+        await DataService.save('perros', id, dog);
+    } catch (e) {
+        showToast(e.message || 'No se pudo guardar el perro', 'error');
+        return;
+    }
     closeDogForm();
     loadDogsList();
     showToast(wasEditing ? 'Perro actualizado' : 'Perro registrado');
